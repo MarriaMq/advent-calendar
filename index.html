@@ -86,6 +86,14 @@
 
   /* подпись под картинкой на главном экране (поле caption у дня) */
   .cap{margin-top:10px;font-size:12px;line-height:1.35;color:var(--ink);max-width:30ch;text-wrap:pretty}
+  /* текст поверх картинки: не размывается вместе с ней и не мешает нажатию */
+  .media{position:relative}
+  .cap-on{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    margin:0;width:70%;max-width:none;text-align:center;
+    font-size:13px;font-weight:600;line-height:1.25;letter-spacing:-.01em;
+    color:var(--bg);pointer-events:none;
+  }
 
   /* слова-декор на фоне, как на обложке */
   .word{
@@ -195,7 +203,8 @@
    ДАННЫЕ: сюда вписываешь каждый день.
    title  – название (появляется рядом с номером)
    tag    – формат дня: «видео», «туториал», «файл», «статья»… (любой текст)
-   caption– (необязательно) подпись под картинкой прямо на главном экране
+   caption– (необязательно) подпись на главном экране
+   captionPlace – "center" = текст поверх картинки по центру; без него — под картинкой
    img    – картинка карточки (лучше PNG без фона)
    blocks – содержимое шторки, в любом порядке и количестве:
      { text:  "абзац" }                       – текст (можно несколько абзацев через \n\n)
@@ -207,8 +216,9 @@
      { heading: "заголовок раздела" }
    ========================================================= */
 const DAYS = [
-  { title:"синнабон-контент", tag:"видео", img:"images/bun.webp",
+  { title:"синнабон-контент", tag:"видео", img:"images/bun-white.webp",
     caption:"создаем рилс на повышение ЛОЯЛЬНОСТИ (даем пользу или свой жизненный опыт)",
+    captionPlace:"center",
     blocks:[
       { text:"Как снимать «вкусный» контент на телефон: свет, ракурс и 3 кадра, которые продают." },
       { video:"" },
@@ -279,6 +289,7 @@ const hero = document.querySelector('.intro');
 const today = new Date();
 const rnd = n => { const x = Math.sin(n * 99.13) * 43758.5453; return x - Math.floor(x); }; // стабильный «рандом»
 
+const capText = t => String(t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 DAYS.forEach((d, i) => {
   const row = ROWS[Math.floor(i / 2) % ROWS.length];
   const side = i % 2;                                          // 0 — слева, 1 — справа
@@ -299,8 +310,11 @@ DAYS.forEach((d, i) => {
   el.innerHTML = `
     <div class="plx"><div class="rev">
       <div class="label"><i class="num">(${n})</i><span class="ttl">${d.title}</span></div>
-      <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
-      ${d.caption ? `<p class="cap">${String(d.caption).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</p>` : ''}
+      <div class="media">
+        <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
+        ${d.caption && d.captionPlace === 'center' ? `<p class="cap cap-on">${capText(d.caption)}</p>` : ''}
+      </div>
+      ${d.caption && d.captionPlace !== 'center' ? `<p class="cap">${capText(d.caption)}</p>` : ''}
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
             speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
