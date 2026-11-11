@@ -87,7 +87,7 @@
     color:var(--muted);white-space:nowrap;will-change:transform;
     font-size:var(--fs,13px);letter-spacing:-.01em;
   }
-  .hero{will-change:transform,opacity}
+  .intro{will-change:transform,opacity}   /* заголовок и подпись под ним двигаются одним блоком */
 
   /* активная карточка: резкость + наклон + подпись */
   .card.is-active{z-index:30}
@@ -166,8 +166,10 @@
   <div style="text-align:right">декабрь<br>2026</div>
 </header>
 
+<div class="intro">
 <section class="hero">NE(W)<br>CON&shy;TENT<br>DUMP</section>
 <p class="lead">Нажми на карточку дня — она проявится, и откроется подарок этого дня.</p>
+</div>
 
 <main class="field" id="field"></main>
 
@@ -264,7 +266,7 @@ const MAX_W = 440;   // на широких экранах композиция 
 const WORDS = ["trends","creative","templates","ideas","visual","smm","marketing","tutorials","lessons","advent","gifts","inspo"];
 
 const field = document.getElementById('field');
-const hero = document.querySelector('.hero');
+const hero = document.querySelector('.intro');
 const today = new Date();
 const rnd = n => { const x = Math.sin(n * 99.13) * 43758.5453; return x - Math.floor(x); }; // стабильный «рандом»
 
