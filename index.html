@@ -185,6 +185,24 @@
     width:32px;height:32px;border-radius:50%;font-size:16px;line-height:32px;cursor:pointer;
   }
 
+  /* ---------- закреплённая кнопка клуба ---------- */
+  .club{
+    position:fixed;left:0;right:0;bottom:0;z-index:35;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(transparent, var(--bg) 45%);
+    pointer-events:none;transition:opacity .3s ease, transform .3s ease;
+  }
+  .club a{
+    pointer-events:auto;display:flex;align-items:center;justify-content:center;
+    height:52px;border-radius:999px;
+    background:var(--ink);color:var(--bg);text-decoration:none;
+    font-size:15px;font-weight:500;letter-spacing:-.01em;
+  }
+  .club a:active{transform:scale(.98)}
+  .club a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  .open .club{opacity:0;transform:translateY(20px);pointer-events:none}   /* прячем, пока открыт день */
+  body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+
   @media (prefers-reduced-motion:reduce){
     .tilt,.sheet,.tilt img,.rev{transition:none}
     .rev{opacity:1;transform:none}
@@ -214,6 +232,8 @@
 </div>
 
 <main class="field" id="field"></main>
+
+<nav class="club"><a id="clubBtn" href="https://t.me/newcontentdump_bot?start=" target="_blank" rel="noopener">Присоединиться к клубу</a></nav>
 
 <div class="scrim" id="scrim"></div>
 <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
@@ -731,6 +751,23 @@ sheet.addEventListener('touchend', e => {
     tg.setHeaderColor && tg.setHeaderColor('#550d10');
     tg.setBackgroundColor && tg.setBackgroundColor('#550d10');
   } catch(e) {}
+})();
+</script>
+<script>
+/* ---------- кнопка клуба ----------
+   ССЫЛКА НА БОТА — вписать сюда: */
+const CLUB_URL = "https://t.me/newcontentdump_bot?start=";
+(function(){
+  const btn = document.getElementById('clubBtn');
+  btn.href = CLUB_URL;
+  btn.addEventListener('click', e => {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    // внутри Telegram открываем бота нативно, а не во внешнем браузере
+    if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(CLUB_URL) && tg.platform && tg.platform !== 'unknown') {
+      e.preventDefault();
+      tg.openTelegramLink(CLUB_URL);
+    }
+  });
 })();
 </script>
 </body>
