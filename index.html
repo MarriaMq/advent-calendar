@@ -81,6 +81,9 @@
     user-select:none;-webkit-user-drag:none;pointer-events:none;
   }
 
+  /* подпись под картинкой на главном экране (поле caption у дня) */
+  .cap{margin-top:10px;font-size:12px;line-height:1.35;color:var(--ink);max-width:30ch;text-wrap:pretty}
+
   /* слова-декор на фоне, как на обложке */
   .word{
     position:absolute;left:0;top:0;z-index:0;pointer-events:none;
@@ -189,6 +192,7 @@
    ДАННЫЕ: сюда вписываешь каждый день.
    title  – название (появляется рядом с номером)
    tag    – формат дня: «видео», «туториал», «файл», «статья»… (любой текст)
+   caption– (необязательно) подпись под картинкой прямо на главном экране
    img    – картинка карточки (лучше PNG без фона)
    blocks – содержимое шторки, в любом порядке и количестве:
      { text:  "абзац" }                       – текст (можно несколько абзацев через \n\n)
@@ -200,11 +204,12 @@
      { heading: "заголовок раздела" }
    ========================================================= */
 const DAYS = [
-  { title:"синнабон-контент", tag:"видео", img:"images/bun.webp", blocks:[
+  { title:"синнабон-контент", tag:"видео", img:"images/bun.webp",
+    caption:"создаем рилс на повышение ЛОЯЛЬНОСТИ (даем пользу или свой жизненный опыт)",
+    blocks:[
       { text:"Как снимать «вкусный» контент на телефон: свет, ракурс и 3 кадра, которые продают." },
       { video:"" },
-      { heading:"задание 1" },
-      { text:"• создаем рилс на повышение ЛОЯЛЬНОСТИ (даем пользу или свой жизненный опыт)" } ]},
+      ]},
   { title:"селфи-формат", tag:"туториал", img:"images/cat.webp", blocks:[
       { text:"Пошаговый разбор: как сделать селфи-видео, которое досматривают до конца." },
       { steps:[
@@ -292,6 +297,7 @@ DAYS.forEach((d, i) => {
     <div class="plx"><div class="rev">
       <div class="label"><i class="num">(${n})</i><span class="ttl">${d.title}</span></div>
       <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
+      ${d.caption ? `<p class="cap">${String(d.caption).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</p>` : ''}
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
             speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
