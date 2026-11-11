@@ -154,7 +154,14 @@
   .sheet{
     position:fixed;left:0;right:0;bottom:0;z-index:50;
     max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
-    background:var(--bg);border-radius:18px 18px 0 0;
+    /* шторка урока — тёплый молочный, внутри свои цвета под светлый фон */
+    --paper:#f3eee7;
+    --ink:#3a0b0e;
+    --muted:rgba(58,11,14,.55);
+    --line:rgba(58,11,14,.14);
+    --surface:rgba(58,11,14,.06);
+    --surface-press:rgba(58,11,14,.11);
+    background:var(--paper);color:var(--ink);border-radius:18px 18px 0 0;
     padding:10px 16px calc(28px + env(safe-area-inset-bottom));
     transform:translateY(105%);
     transition:transform .5s cubic-bezier(.2,.8,.2,1);
@@ -164,7 +171,9 @@
   .grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
   .sheet .meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:10px;padding-right:44px}
   .sheet h2{font-size:30px;line-height:1;letter-spacing:-.03em;font-weight:700;margin-bottom:14px}
-  .sheet .cover{width:62%;max-height:260px;object-fit:contain;display:block;margin:0 auto 18px}
+  /* белая игрушка на светлом фоне: чуть притемняем и даём тень, чтобы читалась */
+  .sheet .cover{width:62%;max-height:260px;object-fit:contain;display:block;margin:0 auto 18px;
+    filter:brightness(.88) contrast(1.08) drop-shadow(0 10px 18px rgba(58,11,14,.22))}
   .sheet p{font-size:15px;line-height:1.5;margin-bottom:14px}
   .sheet h3{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
   .tag{display:inline-block;font-size:12px;letter-spacing:.02em;margin-bottom:10px}
@@ -184,7 +193,7 @@
     background:var(--surface);color:var(--ink);text-decoration:none;
   }
   .row:active{background:var(--surface-press)}
-  .row .ic{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:15px}
+  .row .ic{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper,#fff);display:grid;place-items:center;font-size:15px}
   .row .tx{flex:1;min-width:0}
   .row .tx b{display:block;font-weight:500;font-size:14px;line-height:1.25}
   .row .tx small{display:block;font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -194,7 +203,7 @@
   .video .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:12px}
   .close{
     position:sticky;top:0;float:right;margin-top:-4px;
-    border:0;background:var(--ink);color:var(--bg);
+    border:0;background:var(--ink);color:var(--paper,#fff);
     width:32px;height:32px;border-radius:50%;font-size:16px;line-height:32px;cursor:pointer;
   }
 
