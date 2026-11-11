@@ -371,7 +371,7 @@ DAYS.forEach((d, i) => {
   el.dataset.i = i;
   el.innerHTML = `
     <div class="plx"><div class="rev">
-      <div class="label"><i class="num">(${n})</i><span class="ttl">${d.title}</span></div>
+      <div class="label"><i class="num">((${n}))</i><span class="ttl">${d.title}</span></div>
       <div class="media">
         <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
         ${d.caption && d.captionPlace === 'center' ? `<p class="cap cap-on">${capText(d.caption)}</p>` : ''}
@@ -671,7 +671,7 @@ function blockHTML(b){
 function openDay(i){
   const d = DAYS[i];
   const date = new Date(START); date.setDate(START.getDate() + i);
-  sNum.textContent = `(${String(i+1).padStart(2,'0')}) день`;
+  sNum.textContent = `((${String(i+1).padStart(2,'0')})) день`;
   sDate.textContent = date.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
   sTag.textContent = d.tag || '';
   sTag.hidden = !d.tag;
