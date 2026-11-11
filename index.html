@@ -53,6 +53,10 @@
 
   /* ---------- поле с карточками: свободный коллаж ---------- */
   .field{position:relative;margin:0 16px;min-height:100vh}
+  /* без синей рамки фокуса от касаний; при управлении с клавиатуры — аккуратная пунктирная */
+  .card, .close{outline:none;-webkit-tap-highlight-color:transparent}
+  .card:focus-visible{outline:1px dashed var(--muted);outline-offset:6px}
+  .close:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
   .card{
     position:absolute;left:0;top:0;
     width:var(--w);
@@ -759,6 +763,11 @@ cards.forEach(card => card.addEventListener('click', e => {
   openCard(card);
 }));
 
+/* фокус возвращаем только тем, кто управляет с клавиатуры — иначе iPhone рисует синюю рамку */
+let usingKeyboard = false;
+addEventListener('keydown', e => { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ') usingKeyboard = true; }, true);
+['touchstart','pointerdown'].forEach(t => addEventListener(t, () => { usingKeyboard = false; }, { capture: true, passive: true }));
+
 /* ---------- шторка ---------- */
 const sheet = document.getElementById("sheet"), closeBtn = document.getElementById("closeBtn");
 function videoHTML(src){
@@ -797,12 +806,12 @@ function openDay(i){
   sBody.innerHTML = (d.blocks || []).map(blockHTML).join('');
   sheet.scrollTop = 0;
   document.body.classList.add('open','locked');
-  closeBtn.focus({preventScroll:true});
+  if (usingKeyboard) closeBtn.focus({preventScroll:true});
 }
 function closeDay(){
   document.body.classList.remove('open','locked');
   sBody.innerHTML = '';                 // останавливает видео
-  if (active) { const c = active; deactivate(c); c.focus({preventScroll:true}); }
+  if (active) { const c = active; deactivate(c); if (usingKeyboard) c.focus({preventScroll:true}); else c.blur(); }
 }
 closeBtn.onclick = closeDay;
 scrim.onclick = closeDay;
