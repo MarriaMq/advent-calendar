@@ -234,6 +234,10 @@
   .open .club{opacity:0;transform:translateY(20px);pointer-events:none}   /* прячем, пока открыт день */
   body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 
+  /* слабые Android: размытие легче, появление быстрее */
+  .lite .card.is-locked .tilt{filter:blur(2px)}
+  .lite .rev{transition:opacity .5s ease, transform .6s ease}
+
   @media (prefers-reduced-motion:reduce){
     .tilt,.sheet,.tilt img,.rev{transition:none}
     .rev{opacity:1;transform:none}
@@ -419,6 +423,22 @@ const ROWS = [
 const MAX_W = 440;   // на широких экранах композиция не растягивается шире этого (px)
 const WORDS = ["trends","creative","templates","ideas","visual","smm","marketing","tutorials","lessons","advent","gifts","inspo"];
 
+/* ---------- Telegram: вибрация и облегчённый режим ---------- */
+const TG = window.Telegram && window.Telegram.WebApp;
+const IN_TG = !!(TG && TG.platform && TG.platform !== 'unknown');
+// вибрация: impact — 'light' | 'medium' | 'soft' | …, notify — 'success' | 'warning' | 'error'
+function haptic(kind, type){
+  try {
+    const h = IN_TG && TG.HapticFeedback;
+    if (!h) return;
+    kind === 'notify' ? h.notificationOccurred(type) : h.impactOccurred(type);
+  } catch (_) {}
+}
+/* слабые Android: Telegram пишет класс устройства в конце User-Agent — (… ; LOW) / AVERAGE / HIGH.
+   На LOW убираем покачивание и доворот, параллакс слабее, размытие легче. */
+const LITE = /Telegram-Android\/[^(]*\([^)]*;\s*LOW\)/i.test(navigator.userAgent);
+if (LITE) document.documentElement.classList.add('lite');
+
 const field = document.getElementById('field');
 const hero = document.querySelector('.intro');
 const today = new Date();
@@ -455,9 +475,9 @@ DAYS.forEach((d, i) => {
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
             imgScale: /cherry/.test(d.img) ? .66 : 1,      // вишни помельче
-            speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
-            sway:  (side ? 1 : -1) * (2 + depth * 2),        // покачивание влево-вправо
-            spin:  (i % 3 ? 1 : -1) * (2 + (1-depth) * 4),   // доворот при прокрутке
+            speed: (.03 + depth * .04) * (LITE ? .5 : 1),    // крупные едут чуть быстрее (разница мала — меньше наездов)
+            sway:  LITE ? 0 : (side ? 1 : -1) * (2 + depth * 2),        // покачивание влево-вправо
+            spin:  LITE ? 0 : (i % 3 ? 1 : -1) * (2 + (1-depth) * 4),   // доворот при прокрутке
             r: rot, x:0, y:0 };
   field.appendChild(el);
 });
@@ -548,7 +568,7 @@ cards.forEach(c => io.observe(c));
    плавный скролл с инерцией: картинки чуть «догоняют» палец */
 function frame(){
   const vh = innerHeight;
-  smooth += (scrollY - smooth) * .11;
+  smooth += (scrollY - smooth) * (LITE ? .35 : .11);   // на слабых устройствах без долгой инерции
   const fieldTop = field.getBoundingClientRect().top + scrollY;
   let moving = Math.abs(scrollY - smooth) > .3;
 
@@ -686,6 +706,7 @@ function tapStart(x, y, id){
   if (!card) return;
   press = { card, id, x, y, locked: card.classList.contains('is-locked') };
   if (press.locked) return;                         // закрытый — реагируем только на отпускание
+  haptic('impact', 'light');                        // палец коснулся открытого урока
   clearTimeout(openTimer); clearTimeout(driftTimer);
   activate(card);
   tiltTo(card, x, y);
@@ -733,6 +754,7 @@ addEventListener('pointercancel', e => { if (e.pointerType !== 'touch') tapCance
 /* нажали на закрытый день — покачиваем карточку и подсказываем про клуб */
 let toastTimer;
 function lockedTap(card){
+  haptic('notify', 'warning');                      // «это в клубе»
   card.classList.remove('nudge'); void card.offsetWidth; card.classList.add('nudge');
   const t = document.getElementById('toast');
   t.classList.add('show');
@@ -752,7 +774,7 @@ function openCard(card){
     t.style.transform = `perspective(700px) rotateY(${(-m[1]*.45).toFixed(2)}deg) rotateX(${(-m[2]*.45).toFixed(2)}deg) scale(1.18)`;
   }, 550);
   // даём эффекту отыграть, потом открываем день
-  openTimer = setTimeout(() => openDay(+card.dataset.i), OPEN_DELAY);
+  openTimer = setTimeout(() => { haptic('impact', 'medium'); openDay(+card.dataset.i); }, OPEN_DELAY);
 }
 
 // клавиатура (Enter/пробел на карточке): нажатие пальцем/мышью уже обработано выше
@@ -844,6 +866,7 @@ sheet.addEventListener('touchend', e => {
     tg.disableVerticalSwipes && tg.disableVerticalSwipes();
     tg.setHeaderColor && tg.setHeaderColor('#550d10');
     tg.setBackgroundColor && tg.setBackgroundColor('#550d10');
+    tg.setBottomBarColor && tg.setBottomBarColor('#550d10');   // нижняя полоса Telegram в цвет фона
   } catch(e) {}
 })();
 </script>
@@ -859,6 +882,7 @@ const CLUB_URL = "https://t.me/newcontentdump_bot?start=";
     // внутри Telegram открываем бота нативно, а не во внешнем браузере
     if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(CLUB_URL) && tg.platform && tg.platform !== 'unknown') {
       e.preventDefault();
+      haptic('impact', 'medium');
       tg.openTelegramLink(CLUB_URL);
       // закрываем мини-приложение, чтобы сразу был виден чат с ботом
       setTimeout(() => { try { tg.close(); } catch (_) {} }, 300);
