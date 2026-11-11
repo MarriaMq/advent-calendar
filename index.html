@@ -14,7 +14,7 @@
     --surface:rgba(255,255,255,.09);    /* плашки файлов и ссылок */
     --surface-press:rgba(255,255,255,.16);
     --blur:3px;          /* сила размытия неактивных карточек */
-    --tilt:14;           /* макс. наклон в градусах */
+    --tilt:20;           /* макс. наклон в градусах */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg);color:var(--ink)}
@@ -123,6 +123,9 @@
 
   /* активная карточка: резкость + наклон + подпись */
   .card.is-active{z-index:30}
+  /* нажали на открытый урок: он выходит вперёд, остальные уходят в тень */
+  body.focus .card.in:not(.is-active) .rev{opacity:.22;transition:opacity .4s ease}
+  body.focus .word, body.focus .intro{opacity:.25 !important;transition:opacity .4s ease}
   /* без drop-shadow: в Safari/Telegram на iPhone тень-фильтр + 3D-наклон рисуют белый прямоугольник */
   .card.is-active .tilt{filter:blur(0px)}
   .card.is-active .label .num{font-style:italic}
@@ -581,21 +584,27 @@ let active = null;
 function tiltTo(card, clientX, clientY){
   const t = card.querySelector('.tilt');
   const r = t.getBoundingClientRect();
-  const px = Math.min(Math.max((clientX - r.left)/r.width, 0), 1) - .5;   // -0.5…0.5
-  const py = Math.min(Math.max((clientY - r.top)/r.height, 0), 1) - .5;
+  let px = Math.min(Math.max((clientX - r.left)/r.width, 0), 1) - .5;   // -0.5…0.5
+  let py = Math.min(Math.max((clientY - r.top)/r.height, 0), 1) - .5;
+  // нажали почти в центр — всё равно заметно наклоняем, иначе эффекта не видно
+  const mag = Math.hypot(px, py), MIN = .32;
+  if (mag < .03) { px = -.26; py = -.18; }
+  else if (mag < MIN) { px *= MIN / mag; py *= MIN / mag; }
   // карточка «вдавливается» в точку касания — как наведение курсором в референсе
-  t.style.transform = `perspective(700px) rotateY(${(px*TILT*2).toFixed(2)}deg) rotateX(${(-py*TILT*2).toFixed(2)}deg) scale(1.06)`;
+  t.style.transform = `perspective(700px) rotateY(${(px*TILT*2).toFixed(2)}deg) rotateX(${(-py*TILT*2).toFixed(2)}deg) scale(1.14)`;
 }
 function activate(card){
   if (active && active !== card) deactivate(active);
   active = card;
   card.classList.add('is-active');
+  document.body.classList.add('focus');            // остальные карточки приглушаются — «прожектор»
   kick();
 }
 function deactivate(card){
   card.classList.remove('is-active');
   card.querySelector('.tilt').style.transform = '';
   if (active === card) active = null;
+  if (!active) document.body.classList.remove('focus');
   kick();
 }
 
@@ -664,32 +673,58 @@ function pickCard(x, y){
 /* --- свой «тап» вместо click: на iPhone click часто теряется, потому что карточка
        начинает двигаться под пальцем. Тап = коснулся и отпустил, почти не сдвигая палец. */
 let press = null;
-const TAP_MOVE = 12;   // px — больше считается прокруткой
+const TAP_MOVE = 14;   // px — больше считается прокруткой
 
-field.addEventListener('pointerdown', e => {
-  if (e.button > 0 || document.body.classList.contains('open')) return;
-  const card = pickCard(e.clientX, e.clientY);
+/* общие шаги жеста — для пальца (touch-события) и для мыши (pointer-события) */
+function tapStart(x, y, id){
+  if (document.body.classList.contains('open')) return;
+  const card = pickCard(x, y);
   if (!card) return;
-  if (card.classList.contains('is-locked')) { lockedTap(card); return; }
-  press = { card, id: e.pointerId, x: e.clientX, y: e.clientY };
+  press = { card, id, x, y, locked: card.classList.contains('is-locked') };
+  if (press.locked) return;                         // закрытый — реагируем только на отпускание
   clearTimeout(openTimer); clearTimeout(driftTimer);
   activate(card);
-  tiltTo(card, e.clientX, e.clientY);
+  tiltTo(card, x, y);
+}
+function tapMove(x, y, id){
+  if (!press || id !== press.id) return;
+  if (Math.hypot(x - press.x, y - press.y) > TAP_MOVE) { tapCancel(id); return; }
+  if (!press.locked) tiltTo(press.card, x, y);
+}
+function tapEnd(id){
+  if (!press || id !== press.id) return;
+  const { card, locked } = press; press = null;
+  locked ? lockedTap(card) : openCard(card);
+}
+function tapCancel(id){
+  if (!press || id !== press.id) return;
+  if (!press.locked) deactivate(press.card);
+  press = null;
+}
+
+// палец: touch-события на iPhone надёжнее pointer-событий (не обрываются от лёгкого дрожания)
+field.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) { if (press) tapCancel(press.id); return; }
+  const t = e.changedTouches[0]; tapStart(t.clientX, t.clientY, 't' + t.identifier);
+}, { passive: true });
+addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) tapMove(t.clientX, t.clientY, 't' + t.identifier);
+}, { passive: true });
+addEventListener('touchend', e => {
+  for (const t of e.changedTouches) tapEnd('t' + t.identifier);
 });
-addEventListener('pointermove', e => {
-  if (!press || e.pointerId !== press.id) return;
-  if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_MOVE) { deactivate(press.card); press = null; return; }
-  tiltTo(press.card, e.clientX, e.clientY);
+addEventListener('touchcancel', e => {               // палец ушёл в прокрутку — гасим
+  for (const t of e.changedTouches) tapCancel('t' + t.identifier);
 });
-addEventListener('pointerup', e => {
-  if (!press || e.pointerId !== press.id) return;
-  const card = press.card; press = null;
-  openCard(card);
+
+// мышь и стилус
+field.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch' || e.button > 0) return;
+  tapStart(e.clientX, e.clientY, 'p' + e.pointerId);
 });
-addEventListener('pointercancel', e => {            // палец ушёл в прокрутку — гасим, ничего не открываем
-  if (!press || e.pointerId !== press.id) return;
-  deactivate(press.card); press = null;
-});
+addEventListener('pointermove', e => { if (e.pointerType !== 'touch') tapMove(e.clientX, e.clientY, 'p' + e.pointerId); });
+addEventListener('pointerup',   e => { if (e.pointerType !== 'touch') tapEnd('p' + e.pointerId); });
+addEventListener('pointercancel', e => { if (e.pointerType !== 'touch') tapCancel('p' + e.pointerId); });
 
 /* нажали на закрытый день — покачиваем карточку и подсказываем про клуб */
 let toastTimer;
@@ -710,7 +745,7 @@ function openCard(card){
   const t = card.querySelector('.tilt');
   const m = /rotateY\(([-\d.]+)deg\) rotateX\(([-\d.]+)deg\)/.exec(t.style.transform);
   if (m) driftTimer = setTimeout(() => {
-    t.style.transform = `perspective(700px) rotateY(${(-m[1]*.45).toFixed(2)}deg) rotateX(${(-m[2]*.45).toFixed(2)}deg) scale(1.08)`;
+    t.style.transform = `perspective(700px) rotateY(${(-m[1]*.45).toFixed(2)}deg) rotateX(${(-m[2]*.45).toFixed(2)}deg) scale(1.18)`;
   }, 550);
   // даём эффекту отыграть, потом открываем день
   openTimer = setTimeout(() => openDay(+card.dataset.i), OPEN_DELAY);
@@ -720,7 +755,7 @@ function openCard(card){
 cards.forEach(card => card.addEventListener('click', e => {
   if (e.detail !== 0 || card.classList.contains('is-locked')) return;
   activate(card);
-  card.querySelector('.tilt').style.transform = `perspective(700px) rotateX(6deg) rotateY(-8deg) scale(1.06)`;
+  card.querySelector('.tilt').style.transform = `perspective(700px) rotateX(8deg) rotateY(-12deg) scale(1.14)`;
   openCard(card);
 }));
 
