@@ -100,7 +100,7 @@
     position:absolute;left:14%;top:16%;width:118%;pointer-events:none;
     color:var(--ink);letter-spacing:-.025em;
     transform:scaleY(1.35);transform-origin:0 0;
-    text-shadow:0 0 12px rgba(85,13,16,.55);   /* чтобы белое читалось на светлой картинке */
+    text-shadow:0 0 2px rgba(85,13,16,.9), 0 0 8px rgba(85,13,16,.8), 0 0 18px rgba(85,13,16,.6);   /* белое читается и на белой картинке */
   }
   .cap-over b{display:block;font-weight:400;text-transform:uppercase;font-size:13px;line-height:1;margin-bottom:10px}
   .cap-over p{font-size:13px;line-height:.9;text-wrap:pretty}
@@ -129,9 +129,22 @@
   .card.is-active .label .ttl{opacity:1;transform:none}
 
   /* закрытые (будущие) дни */
-  .card.is-locked{cursor:default}
+  /* закрытые дни — «в клубе»: размытые, полупрозрачные */
+  .card.is-locked .tilt{opacity:.7}
+  .card.is-locked .label{color:var(--muted)}
   .card.is-locked .label .ttl{display:none}
-  .card.is-locked .label::after{content:"скоро";color:var(--muted)}
+  .card.is-locked .label::after{content:"в клубе";color:var(--muted)}
+  .card.nudge .rev{animation:nudge .45s ease}
+  @keyframes nudge{20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
+  .toast{
+    position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:36;
+    transform:translate(-50%,10px);opacity:0;pointer-events:none;
+    padding:10px 16px;border-radius:999px;background:rgba(0,0,0,.55);color:var(--ink);
+    font-size:13px;white-space:nowrap;transition:opacity .25s ease, transform .25s ease;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .club.pulse a{animation:pulse .9s ease}
+  @keyframes pulse{30%{transform:scale(1.04)}60%{transform:scale(.99)}}
 
   /* ---------- шторка с содержимым дня ---------- */
   .scrim{
@@ -196,8 +209,10 @@
     pointer-events:auto;display:flex;align-items:center;justify-content:center;
     height:52px;border-radius:999px;
     background:var(--ink);color:var(--bg);text-decoration:none;
-    font-size:15px;font-weight:500;letter-spacing:-.01em;
+    font-size:17px;font-weight:400;letter-spacing:-.03em;
   }
+  /* тот же узкий вытянутый шрифт, что в заголовке и подзаголовке */
+  .club a span{display:inline-block;transform:scaleY(1.38)}
   .club a:active{transform:scale(.98)}
   .club a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
   .open .club{opacity:0;transform:translateY(20px);pointer-events:none}   /* прячем, пока открыт день */
@@ -233,7 +248,8 @@
 
 <main class="field" id="field"></main>
 
-<nav class="club"><a id="clubBtn" href="https://t.me/newcontentdump_bot?start=" target="_blank" rel="noopener">Присоединиться к клубу</a></nav>
+<div class="toast" id="toast" role="status">это задание — в клубе</div>
+<nav class="club"><a id="clubBtn" href="https://t.me/newcontentdump_bot?start=" target="_blank" rel="noopener"><span>Присоединиться к клубу</span></a></nav>
 
 <div class="scrim" id="scrim"></div>
 <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
@@ -316,48 +332,51 @@ const DAYS = [
       { text:"Как снимать «вкусный» контент на телефон: свет, ракурс и 3 кадра, которые продают." },
       { video:"" },
       ]},
-  { title:"селфи-формат", tag:"туториал", img:"images/cat.webp", blocks:[
+  { title:"селфи-формат", tag:"туториал", img:"images/cat-white.webp", blocks:[
       { text:"Пошаговый разбор: как сделать селфи-видео, которое досматривают до конца." },
       { steps:[
           "Поставь телефон на уровне глаз, камера — по центру лица.",
           "Первые 2 секунды — сразу к сути, без «привет, ребята».",
           "Сними 3 дубля и выбери самый живой, а не самый ровный.",
           "Добавь субтитры: 80% смотрят без звука." ]} ]},
-  { title:"диско-шаблоны", tag:"файл", img:"images/disco.webp", blocks:[
+  { title:"диско-шаблоны", tag:"файл", img:"images/disco-white.webp", blocks:[
       { text:"Набор шаблонов для сторис в стиле коллажа. Открываются в Canva, всё редактируется." },
       { file:"files/templates.zip", name:"Шаблоны сторис — 12 шт.", size:"ZIP · 8 МБ" },
       { file:"files/guide.pdf", name:"Гайд: как пользоваться", size:"PDF · 1,2 МБ" } ]},
-  { title:"контраст", tag:"статья", img:"images/cherry.webp", blocks:[
+  { title:"контраст", tag:"статья", img:"images/cherry-white.webp", blocks:[
       { text:"Почему ч/б-графика снова в трендах и как её использовать в ленте. Собрала лучшие материалы по теме." },
       { heading:"почитать" },
       { link:"https://example.com/article-1", name:"Монохром в айдентике 2026", note:"статья · 7 мин" },
       { link:"https://example.com/article-2", name:"Как сделать stencil-эффект в Photoshop", note:"туториал · 5 мин" } ]},
-  { title:"стикеры", tag:"видео + файл", img:"images/doll.webp", blocks:[
+  { title:"стикеры", tag:"видео + файл", img:"images/doll-white.webp", blocks:[
       { video:"" },
       { text:"Как вырезать объект и сделать из него стикер с белой обводкой за 2 минуты." },
       { file:"files/stickers.zip", name:"Готовые стикеры", size:"PNG · 24 шт." } ]},
-  { title:"сочные визуалы", tag:"туториал", img:"images/lips.webp", blocks:[
+  { title:"сочные визуалы", tag:"туториал", img:"images/lips-white.webp", blocks:[
       { steps:[
           { text:"Выбери один акцентный цвет на всю публикацию." },
           { text:"Добавь блеск: глянец и блики делают кадр «дорогим»." },
           { text:"Кадрируй ближе, чем кажется нужным." } ]} ]},
-  { title:"королева охватов", tag:"лекция", img:"images/queen.webp", blocks:[
+  { title:"королева охватов", tag:"лекция", img:"images/queen-white.webp", blocks:[
       { video:"" },
       { text:"Лекция о том, как алгоритмы решают, кому показать твой пост, и что с этим делать.\n\nВ конце — чек-лист перед публикацией." },
       { link:"https://example.com/checklist", name:"Чек-лист перед публикацией", note:"Notion" } ]},
-  { title:"вишенка", tag:"идеи", img:"images/cherry.webp", blocks:[
+  { title:"вишенка", tag:"идеи", img:"images/cherry-white.webp", blocks:[
       { text:"10 идей для постов в декабре, когда совсем нет вдохновения." },
       { steps:["Итоги года в 5 кадрах","Закулисье рабочего дня","Любимые инструменты","Ошибки, которые больше не повторю","Планы на январь"] } ]},
 ];
 /* дни 9–24 — заглушки, пока не заполнены */
-const IMGS = ["bun","cat","disco","doll","lips","queen","cherry"];
+const IMGS = ["bun","cat","disco","doll","lips","queen","cherry"];   // белые версии: images/<имя>-white.webp
 while (DAYS.length < 24) {
   const k = DAYS.length;
-  DAYS.push({ title:"скоро", tag:"сюрприз", img:`images/${IMGS[k % IMGS.length]}.webp`,
+  DAYS.push({ title:"скоро", tag:"сюрприз", img:`images/${IMGS[k % IMGS.length]}-white.webp`,
               blocks:[{ text:"Содержимое этого дня ещё готовится." }] });
 }
 
 const LOCK_FUTURE = false;               // true — будущие дни закрыты
+/* ОТКРЫТ / В КЛУБЕ: у дня можно написать open:true (чёткий, нажимается)
+   или open:false (размытый, «доступно в клубе»). Если не написано — дни чередуются:
+   нечётные (01, 03, 05…) открыты, чётные — в клубе. */
 const START = new Date(2026, 11, 1);     // 1 декабря
 
 /* =========================================================
@@ -391,14 +410,15 @@ DAYS.forEach((d, i) => {
   const dy   = side ? row.dyR : row.dyL;
   const n = String(i + 1).padStart(2, '0');
   const date = new Date(START); date.setDate(START.getDate() + i);
-  const locked = LOCK_FUTURE && date > today;
+  const open = d.open ?? (i % 2 === 0);
+  const locked = !open || (LOCK_FUTURE && date > today);
   const depth = Math.min(1, Math.max(0, (size - .28) / (.62 - .28)));   // 0 = маленькая/далеко, 1 = крупная/близко
   const rot = (size === big ? 2 : 5) * (rnd(i+3) > .5 ? 1 : -1) * (.6 + rnd(i+5) * .4);
 
   const el = document.createElement('button');
   el.className = 'card' + (locked ? ' is-locked' : '');
   el.style.cssText = `--z:${1 + Math.round(depth*10)};` +
-                     `--b:${(1.6 + (1-depth)*3).toFixed(1)}px;--rin:${(rnd(i+7)-.5)*24}deg`;
+                     `--b:${locked ? (3 + (1-depth)*1.5).toFixed(1) : 0}px;--rin:${(rnd(i+7)-.5)*24}deg`;
   el.dataset.i = i;
   el.innerHTML = `
     <div class="plx"><div class="rev">
@@ -411,6 +431,7 @@ DAYS.forEach((d, i) => {
       ${d.caption && !d.captionPlace ? `<p class="cap">${capText(d.caption)}</p>` : ''}
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
+            imgScale: /cherry/.test(d.img) ? .66 : 1,      // вишни помельче
             speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
             sway:  (side ? 1 : -1) * (2 + depth * 2),        // покачивание влево-вправо
             spin:  (i % 3 ? 1 : -1) * (2 + (1-depth) * 4),   // доворот при прокрутке
@@ -445,7 +466,7 @@ function layout(){
       const m = c._m;
       const img = c.querySelector('img');
       const ar = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
-      const w = B * m.size * Math.max(.7, Math.min(1, 1.2 / ar));   // высокие картинки чуть уже, чтобы не тянулись вниз
+      const w = B * m.size * m.imgScale * Math.max(.7, Math.min(1, 1.2 / ar));   // высокие картинки чуть уже, чтобы не тянулись вниз
       c.style.width = w + 'px';
       const h = c.offsetHeight || w;
       const jitter = rnd(+c.dataset.i + 11) * B * .04;
@@ -632,7 +653,8 @@ const TAP_MOVE = 12;   // px — больше считается прокрут�
 field.addEventListener('pointerdown', e => {
   if (e.button > 0 || document.body.classList.contains('open')) return;
   const card = pickCard(e.clientX, e.clientY);
-  if (!card || card.classList.contains('is-locked')) return;
+  if (!card) return;
+  if (card.classList.contains('is-locked')) { lockedTap(card); return; }
   press = { card, id: e.pointerId, x: e.clientX, y: e.clientY };
   clearTimeout(openTimer); clearTimeout(driftTimer);
   activate(card);
@@ -652,6 +674,18 @@ addEventListener('pointercancel', e => {            // палец ушёл в п
   if (!press || e.pointerId !== press.id) return;
   deactivate(press.card); press = null;
 });
+
+/* нажали на закрытый день — покачиваем карточку и подсказываем про клуб */
+let toastTimer;
+function lockedTap(card){
+  card.classList.remove('nudge'); void card.offsetWidth; card.classList.add('nudge');
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  const club = document.querySelector('.club');
+  club.classList.remove('pulse'); void club.offsetWidth; club.classList.add('pulse');
+}
 
 function openCard(card){
   activate(card);
@@ -766,6 +800,8 @@ const CLUB_URL = "https://t.me/newcontentdump_bot?start=";
     if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(CLUB_URL) && tg.platform && tg.platform !== 'unknown') {
       e.preventDefault();
       tg.openTelegramLink(CLUB_URL);
+      // закрываем мини-приложение, чтобы сразу был виден чат с ботом
+      setTimeout(() => { try { tg.close(); } catch (_) {} }, 300);
     }
   });
 })();
