@@ -524,7 +524,7 @@ function layout(){
   }
   const bottom = Math.max(...placed.map(p => p.y + p.h));
   // запас внизу, чтобы последние ряды доезжали до середины экрана и тоже двигались
-  field.style.height = bottom + Math.max(140, innerHeight * .3) + 'px';
+  field.style.height = bottom + 24 + 'px';            // внизу только небольшой зазор; место под кнопку даёт отступ body
 
   /* слова встают только в пустые места: ищем точку, где рядом нет ни одной картинки */
   const M = 32;                                       // отступ от картинок
