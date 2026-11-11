@@ -417,9 +417,9 @@ function frame(){
       el.style.transform = `translate3d(0,${ty.toFixed(1)}px,0)`;
   }
   // заголовок уезжает медленнее и тает
-  const hp = Math.min(1, smooth / (vh * .8));
-  hero.style.transform = `translate3d(0,${(smooth * .35).toFixed(1)}px,0) scale(${(1 - hp*.06).toFixed(3)})`;
-  hero.style.opacity = (1 - hp * .9).toFixed(3);
+  const hp = Math.min(1, smooth / (vh * .4));        // к середине первого экрана вступление уже растаяло
+  hero.style.transform = `translate3d(0,${(smooth * .2).toFixed(1)}px,0) scale(${(1 - hp*.06).toFixed(3)})`;
+  hero.style.opacity = (1 - hp).toFixed(3);
 
   if (moving && !reduce) requestAnimationFrame(frame); else running = false;
 }
