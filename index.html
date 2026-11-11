@@ -303,7 +303,7 @@ const words = WORDS.map((t, i) => {
   const w = document.createElement('span');
   w.className = 'word'; w.textContent = t; w.setAttribute('aria-hidden','true');
   w.style.setProperty('--fs', (11 + rnd(i+40) * 9).toFixed(0) + 'px');
-  w._m = { speed: -.05 - rnd(i+50) * .12, sway: 0, spin: 0, r: 0, x:0, y:0 };
+  w._m = { speed: -.03 - rnd(i+50) * .05, sway: 0, spin: 0, r: 0, x:0, y:0 };   // плывут вверх чуть быстрее страницы
   field.appendChild(w);
   return w;
 });
@@ -339,12 +339,34 @@ function layout(){
     rowTop = rowBottom + 34;                          // зазор между рядами
   }
   const bottom = Math.max(...placed.map(p => p.y + p.h));
-  field.style.height = bottom + 140 + 'px';
+  // запас внизу, чтобы последние ряды доезжали до середины экрана и тоже двигались
+  field.style.height = bottom + Math.max(140, innerHeight * .3) + 'px';
+
+  /* слова встают только в пустые места: ищем точку, где рядом нет ни одной картинки */
+  const M = 32;                                       // отступ от картинок
+  const taken = [];                                   // уже поставленные слова — их тоже обходим
+  const free = (x, y, ww, wh) =>
+    !placed.some(p => x < p.x + p.w + 10 && x + ww > p.x - 10 && y < p.y + p.h + M && y + wh > p.y - M) &&
+    !taken.some(t => Math.abs(t.y - y) < 120);
   words.forEach((w, i) => {
-    const y = (i + .5) / words.length * bottom;
-    const x = rnd(i+60) * (W - 80);
-    w._m.x = x; w._m.y = y;
-    w.style.left = x + 'px'; w.style.top = y + 'px';
+    const ww = w.offsetWidth || 80, wh = w.offsetHeight || 18;
+    const maxY = bottom - innerHeight * .2;           // не в самом конце страницы
+    let y0 = (i + .5) / words.length * maxY, spot = null;
+    for (let dy = 0; dy < 900 && !spot; dy += 16)
+      for (const sy of [y0 + dy, y0 - dy]) {
+        if (sy < 0 || sy > maxY) continue;
+        const start = rnd(i+60);
+        for (let k = 0; k < 12 && !spot; k++) {
+          const x = off + ((start + k / 12) % 1) * (B - ww);
+          if (free(x, sy, ww, wh)) spot = { x, y: sy };
+        }
+        if (spot) break;
+      }
+    w.hidden = !spot;                                 // некуда поставить — не показываем
+    if (!spot) return;
+    taken.push(spot);
+    w._m.x = spot.x; w._m.y = spot.y;
+    w.style.left = spot.x + 'px'; w.style.top = spot.y + 'px';
   });
   kick();
 }
