@@ -27,15 +27,13 @@
   body.locked{overflow:hidden}
 
   /* ---------- шапка и обложка (по макету) ---------- */
+  /* шапка: одна строка, закреплена сверху */
   .head{
-    display:grid;grid-template-columns:1fr auto;gap:4px 16px;
-    padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0;
-    font-size:11px;line-height:1.25;letter-spacing:-.01em;
-  }
-  .head span:nth-child(even){text-align:right}
-  @media (min-width:560px){
-    .head{grid-template-columns:repeat(4,auto);justify-content:space-between}
-    .head span:nth-child(even){text-align:left}
+    position:sticky;top:0;z-index:20;
+    display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+    padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px;
+    font-size:clamp(8.5px,2.45vw,12px);line-height:1;letter-spacing:-.01em;white-space:nowrap;
+    background:var(--bg);
   }
   /* узкий высокий гротеск: обычный Helvetica, вытянутый по вертикали */
   .hero{
@@ -186,13 +184,13 @@
 </head>
 <body>
 
-<div class="intro">
 <header class="head">
   <span>ne(w) content dump</span>
   <span>2027</span>
   <span>content advent calendar</span>
   <span>by dasha.brisaniuk</span>
 </header>
+<div class="intro">
 <h1 class="hero">
   <span class="ind">new</span>
   <span>((content advent))</span>
@@ -228,20 +226,35 @@ function fitIntro(){
   const hero = document.querySelector('.hero'), tag = document.querySelector('.tagline');
   if (!hero || !tag) return;
   const intro = hero.parentElement, W = intro.clientWidth, pad = 16;
-  const lines = hero.querySelectorAll('span');
-  hero.style.fontSize = '';
-  let fs = parseFloat(getComputedStyle(hero).fontSize);
-  const widest = Math.max(...[...lines].map(l => l.offsetWidth));
-  fs = Math.min(fs * (W - pad * 2) / widest, 96);
-  hero.style.fontSize = fs + 'px';
-  const cal = lines[lines.length - 1];
-  const x = cal.getBoundingClientRect().right - intro.getBoundingClientRect().left;
-  intro.style.setProperty('--tag-x', x + 'px');
-  tag.style.fontSize = '';
-  let tfs = parseFloat(getComputedStyle(tag).fontSize);
-  const tw = Math.max(...[...tag.querySelectorAll('span')].map(l => l.offsetWidth));
-  const room = W - x - pad;
-  tag.style.fontSize = Math.min(22, tfs * room / tw) + 'px';
+  const lines = [...hero.querySelectorAll('span')], tlines = [...tag.querySelectorAll('span')];
+  const TARGET_H = innerHeight / 3;               // заголовок + подзаголовок ≈ треть высоты экрана
+
+  const place = fs => {
+    hero.style.fontSize = fs + 'px';
+    const widest = Math.max(...lines.map(l => l.offsetWidth));
+    // на широком экране блок по центру, на телефоне — от левого края
+    const left = W >= 600 ? Math.max(pad, (W - widest) / 2) : pad;
+    hero.style.paddingLeft = left + 'px';
+    const x = lines[lines.length - 1].getBoundingClientRect().right - intro.getBoundingClientRect().left;
+    intro.style.setProperty('--tag-x', x + 'px');
+    tag.style.fontSize = '16px';
+    const tw = Math.max(...tlines.map(l => l.offsetWidth));
+    const room = Math.min(W - x - pad, left + widest - x + widest * .35);
+    tag.style.fontSize = Math.max(9, Math.min(22, 16 * room / tw)) + 'px';
+    const top = lines[0].getBoundingClientRect().top - lines[0].offsetHeight * .55;   // с учётом вытянутых букв
+    return { widest, h: tlines[tlines.length - 1].getBoundingClientRect().bottom - top };
+  };
+
+  hero.style.fontSize = ''; hero.style.paddingLeft = '';
+  const base = parseFloat(getComputedStyle(hero).fontSize);
+  const w0 = place(base).widest;
+  let fs = Math.min(base * (W - pad * 2) / w0, 96);      // не шире экрана
+  for (let k = 0; k < 3; k++) {                        // и не выше трети экрана
+    const m = place(fs);
+    if (m.h <= TARGET_H * 1.04) break;
+    fs *= TARGET_H / m.h;
+  }
+  place(fs);
 }
 fitIntro();
 addEventListener('resize', fitIntro);
