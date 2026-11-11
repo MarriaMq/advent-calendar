@@ -224,7 +224,7 @@ const DAYS = [
       { text:"Набор шаблонов для сторис в стиле коллажа. Открываются в Canva, всё редактируется." },
       { file:"files/templates.zip", name:"Шаблоны сторис — 12 шт.", size:"ZIP · 8 МБ" },
       { file:"files/guide.pdf", name:"Гайд: как пользоваться", size:"PDF · 1,2 МБ" } ]},
-  { title:"контраст", tag:"статья", img:"images/stencil.webp", blocks:[
+  { title:"контраст", tag:"статья", img:"images/cherry.webp", blocks:[
       { text:"Почему ч/б-графика снова в трендах и как её использовать в ленте. Собрала лучшие материалы по теме." },
       { heading:"почитать" },
       { link:"https://example.com/article-1", name:"Монохром в айдентике 2026", note:"статья · 7 мин" },
@@ -247,10 +247,10 @@ const DAYS = [
       { steps:["Итоги года в 5 кадрах","Закулисье рабочего дня","Любимые инструменты","Ошибки, которые больше не повторю","Планы на январь"] } ]},
 ];
 /* дни 9–24 — заглушки, пока не заполнены */
-const IMGS = ["bun","cat","disco","stencil","doll","lips","queen","cherry"];
+const IMGS = ["bun","cat","disco","doll","lips","queen","cherry"];
 while (DAYS.length < 24) {
   const k = DAYS.length;
-  DAYS.push({ title:"скоро", tag:"сюрприз", img:`images/${IMGS[k % 8]}.webp`,
+  DAYS.push({ title:"скоро", tag:"сюрприз", img:`images/${IMGS[k % IMGS.length]}.webp`,
               blocks:[{ text:"Содержимое этого дня ещё готовится." }] });
 }
 
