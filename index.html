@@ -37,7 +37,7 @@
   }
   /* узкий высокий гротеск: обычный Helvetica, вытянутый по вертикали */
   .hero{
-    padding:30px 16px 0;margin:0;
+    padding:12px 16px 0;margin:0;
     font-weight:400;font-size:min(10vw,72px);   /* точный размер подгоняет скрипт fitIntro() под ширину экрана */
     letter-spacing:-.035em;line-height:.8;
   }
@@ -45,11 +45,11 @@
   .hero .ind{padding-left:.58em}            /* «new» и «calendar» встают после «((» */
   /* подзаголовок начинается там, где кончается «r» в calendar — отступ ставит fitIntro() */
   .tagline{
-    margin:26px 16px 0 var(--tag-x,36%);
+    margin:10px 16px 30px var(--tag-x,36%);
     font-size:16px;letter-spacing:-.025em;line-height:.82;
   }
   .tagline span{display:block;width:max-content;padding-top:.3em;transform:scaleY(1.4);transform-origin:0 100%;white-space:nowrap}
-  .lead{margin:18px 16px 48px var(--tag-x,36%);font-size:11px;line-height:1.35;color:var(--muted)}
+
 
   /* ---------- поле с карточками: свободный коллаж ---------- */
   .field{position:relative;margin:0 16px;min-height:100vh}
@@ -95,6 +95,15 @@
 
   /* подпись под картинкой на главном экране (поле caption у дня) */
   .cap{margin-top:10px;font-size:12px;line-height:1.35;color:var(--ink);max-width:30ch;text-wrap:pretty}
+  /* текст поверх картинки, как в макете: от левого верхнего угла, выходит за край картинки */
+  .cap-over{
+    position:absolute;left:14%;top:16%;width:118%;pointer-events:none;
+    color:var(--ink);letter-spacing:-.025em;
+    transform:scaleY(1.35);transform-origin:0 0;
+    text-shadow:0 0 12px rgba(85,13,16,.55);   /* чтобы белое читалось на светлой картинке */
+  }
+  .cap-over b{display:block;font-weight:400;text-transform:uppercase;font-size:13px;line-height:1;margin-bottom:10px}
+  .cap-over p{font-size:13px;line-height:.9;text-wrap:pretty}
   /* текст поверх картинки: не размывается вместе с ней и не мешает нажатию */
   .media{position:relative}
   .cap-on{
@@ -202,7 +211,6 @@
   <span>контентом, который нативно</span>
   <span>продает</span>
 </p>
-<p class="lead">нажми на карточку дня — откроется задание</p>
 </div>
 
 <main class="field" id="field"></main>
@@ -248,7 +256,7 @@ function fitIntro(){
   hero.style.fontSize = ''; hero.style.paddingLeft = '';
   const base = parseFloat(getComputedStyle(hero).fontSize);
   const w0 = place(base).widest;
-  let fs = Math.min(base * (W - pad * 2) / w0, 96);      // не шире экрана
+  let fs = Math.min(base * (W * .68) / w0, 96);          // «((content advent))» ≈ 68% ширины, как в макете
   for (let k = 0; k < 3; k++) {                        // и не выше трети экрана
     const m = place(fs);
     if (m.h <= TARGET_H * 1.04) break;
@@ -266,7 +274,9 @@ document.fonts && document.fonts.ready.then(fitIntro);
    title  – название (появляется рядом с номером)
    tag    – формат дня: «видео», «туториал», «файл», «статья»… (любой текст)
    caption– (необязательно) подпись на главном экране
-   captionPlace – "center" = текст поверх картинки по центру; без него — под картинкой
+   captionTitle – (необязательно) заголовок подписи, например «задание 1»
+   captionPlace – "over" = текст поверх картинки от левого верхнего угла (как в макете),
+                  "center" = поверх по центру; без него — под картинкой
    img    – картинка карточки (лучше PNG без фона)
    blocks – содержимое шторки, в любом порядке и количестве:
      { text:  "абзац" }                       – текст (можно несколько абзацев через \n\n)
@@ -278,9 +288,10 @@ document.fonts && document.fonts.ready.then(fitIntro);
      { heading: "заголовок раздела" }
    ========================================================= */
 const DAYS = [
-  { title:"синнабон-контент", tag:"видео", img:"images/bun-white.webp",
+  { title:"синнабон-контент", tag:"видео", img:"images/angel.webp",
+    captionTitle:"задание 1",
     caption:"создаем рилс на повышение ЛОЯЛЬНОСТИ (даем пользу или свой жизненный опыт)",
-    captionPlace:"center",
+    captionPlace:"over",
     blocks:[
       { text:"Как снимать «вкусный» контент на телефон: свет, ракурс и 3 кадра, которые продают." },
       { video:"" },
@@ -336,7 +347,7 @@ const START = new Date(2026, 11, 1);     // 1 декабря
    dyL/dyR – насколько карточка опущена вниз (доля ширины крупной)
    ========================================================= */
 const ROWS = [
-  { L:.60, R:.30, dyL:0,   dyR:.42 },
+  { L:.46, R:.30, dyL:0,   dyR:.42 },
   { L:.32, R:.58, dyL:.20, dyR:0   },
   { L:.46, R:.40, dyL:0,   dyR:.30 },
   { L:.28, R:.62, dyL:.36, dyR:0   },
@@ -375,8 +386,9 @@ DAYS.forEach((d, i) => {
       <div class="media">
         <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
         ${d.caption && d.captionPlace === 'center' ? `<p class="cap cap-on">${capText(d.caption)}</p>` : ''}
+        ${d.caption && d.captionPlace === 'over' ? `<div class="cap-over">${d.captionTitle ? `<b>${capText(d.captionTitle)}</b>` : ''}<p>${capText(d.caption)}</p></div>` : ''}
       </div>
-      ${d.caption && d.captionPlace !== 'center' ? `<p class="cap">${capText(d.caption)}</p>` : ''}
+      ${d.caption && !d.captionPlace ? `<p class="cap">${capText(d.caption)}</p>` : ''}
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
             speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
