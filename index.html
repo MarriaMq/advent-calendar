@@ -293,8 +293,8 @@ DAYS.forEach((d, i) => {
       <div class="tilt"><img src="${d.img}" alt="День ${i+1}: ${d.title}"></div>
     </div></div>`;
   el._m = { size, side, dy, big, depth, rot,
-            speed: .04 + depth * .08,                        // крупные едут чуть быстрее
-            sway:  (side ? 1 : -1) * (3 + depth * 4),        // покачивание влево-вправо
+            speed: .03 + depth * .04,                        // крупные едут чуть быстрее (разница мала — меньше наездов)
+            sway:  (side ? 1 : -1) * (2 + depth * 2),        // покачивание влево-вправо
             spin:  (i % 3 ? 1 : -1) * (2 + (1-depth) * 4),   // доворот при прокрутке
             r: rot, x:0, y:0 };
   field.appendChild(el);
@@ -402,6 +402,7 @@ function frame(){
     const ty = -p * vh * m.speed;
     const tx = Math.sin(p * 2.2 + m.y * .01) * m.sway;
     const rot = m.r + p * m.spin * (isActive ? 0 : 1);
+    m.cur = rot;                                          // запоминаем наклон — нужен для попадания пальцем
     const sc  = 1 + (1 - Math.min(1, Math.abs(p))) * .05 * (m.speed > 0 ? 1 : 0);
     if (el.classList.contains('card'))
       el.firstElementChild.style.transform = `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
@@ -444,37 +445,116 @@ function deactivate(card){
 }
 
 const OPEN_DELAY = 1300;   // сколько мс показываем эффект до открытия дня
-let openTimer, driftTimer, startY;
-cards.forEach(card => {
-  if (card.classList.contains('is-locked')) return;
+let openTimer, driftTimer;
 
-  card.addEventListener('pointerdown', e => {
-    startY = e.clientY;
-    activate(card);
-    tiltTo(card, e.clientX, e.clientY);
+/* --- какая карточка под пальцем ---
+   картинки вырезаны, вокруг объекта прозрачно. Чтобы прозрачный угол передней карточки
+   не «съедал» нажатие по задней, проверяем, попал ли палец в непрозрачный пиксель. */
+const alphaCache = new Map();
+function alphaMap(img){
+  if (!img.naturalWidth) return null;
+  let a = alphaCache.get(img.src);
+  if (a) return a;
+  const k = Math.min(1, 96 / Math.max(img.naturalWidth, img.naturalHeight));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(img.naturalWidth * k));
+  cv.height = Math.max(1, Math.round(img.naturalHeight * k));
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  try {
+    cx.drawImage(img, 0, 0, cv.width, cv.height);
+    a = { w: cv.width, h: cv.height, d: cx.getImageData(0, 0, cv.width, cv.height).data };
+  } catch (e) { a = { none: true }; }        // если браузер не дал прочитать — считаем всю картинку «плотной»
+  alphaCache.set(img.src, a);
+  return a;
+}
+function solidAt(card, x, y){
+  const img = card.querySelector('img');
+  const r = img.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const ang = -(card._m.cur || 0) * Math.PI / 180;           // снимаем наклон карточки
+  const dx = x - cx, dy = y - cy;
+  const lx = dx * Math.cos(ang) - dy * Math.sin(ang);
+  const ly = dx * Math.sin(ang) + dy * Math.cos(ang);
+  const w = img.offsetWidth, h = img.offsetHeight;
+  const sc = r.width / Math.max(1, Math.abs(w * Math.cos(ang)) + Math.abs(h * Math.sin(ang)));
+  const u = lx / (w * sc) + .5, v = ly / (h * sc) + .5;
+  if (u < 0 || u > 1 || v < 0 || v > 1) return false;
+  const a = alphaMap(img);
+  if (!a || a.none) return true;
+  const px = Math.floor(u * a.w), py = Math.floor(v * a.h);
+  for (let oy = -2; oy <= 2; oy++) for (let ox = -2; ox <= 2; ox++) {   // небольшой допуск вокруг пальца
+    const X = px + ox, Y = py + oy;
+    if (X < 0 || Y < 0 || X >= a.w || Y >= a.h) continue;
+    if (a.d[(Y * a.w + X) * 4 + 3] > 60) return true;
+  }
+  return false;
+}
+function pickCard(x, y){
+  const under = cards.filter(c => {
+    const r = c.querySelector('img').getBoundingClientRect();
+    return x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6;
   });
-  card.addEventListener('pointermove', e => {
-    if (active === card && e.pressure > 0) tiltTo(card, e.clientX, e.clientY);
-  });
-  // палец ушёл в скролл — гасим, ничего не открываем
-  card.addEventListener('pointercancel', () => deactivate(card));
+  if (!under.length) return null;
+  // сверху вниз: та, что выше по слою, проверяется первой
+  under.sort((A, B) => (+getComputedStyle(B).zIndex || 0) - (+getComputedStyle(A).zIndex || 0)
+                       || (+B.dataset.i) - (+A.dataset.i));
+  const hit = under.find(c => solidAt(c, x, y));
+  if (hit) return hit;
+  // палец в пустом месте — берём карточку, к центру которой он ближе
+  const dist = c => { const r = c.querySelector('img').getBoundingClientRect();
+                      return Math.hypot(x - (r.left + r.width/2), y - (r.top + r.height/2)); };
+  return under.sort((A, B) => dist(A) - dist(B))[0];
+}
 
-  card.addEventListener('click', e => {
-    activate(card);
-    if (e.detail === 0) {           // клавиатура: наклон в центр
-      card.querySelector('.tilt').style.transform = `perspective(700px) rotateX(6deg) rotateY(-8deg) scale(1.06)`;
-    }
-    clearTimeout(openTimer); clearTimeout(driftTimer);
-    // карточка плавно «покачивается» в другую сторону, чтобы эффект было видно
-    const t = card.querySelector('.tilt');
-    const m = /rotateY\(([-\d.]+)deg\) rotateX\(([-\d.]+)deg\)/.exec(t.style.transform);
-    if (m) driftTimer = setTimeout(() => {
-      t.style.transform = `perspective(700px) rotateY(${(-m[1]*.45).toFixed(2)}deg) rotateX(${(-m[2]*.45).toFixed(2)}deg) scale(1.08)`;
-    }, 550);
-    // даём эффекту отыграть, потом открываем день
-    openTimer = setTimeout(() => openDay(+card.dataset.i), OPEN_DELAY);
-  });
+/* --- свой «тап» вместо click: на iPhone click часто теряется, потому что карточка
+       начинает двигаться под пальцем. Тап = коснулся и отпустил, почти не сдвигая палец. */
+let press = null;
+const TAP_MOVE = 12;   // px — больше считается прокруткой
+
+field.addEventListener('pointerdown', e => {
+  if (e.button > 0 || document.body.classList.contains('open')) return;
+  const card = pickCard(e.clientX, e.clientY);
+  if (!card || card.classList.contains('is-locked')) return;
+  press = { card, id: e.pointerId, x: e.clientX, y: e.clientY };
+  clearTimeout(openTimer); clearTimeout(driftTimer);
+  activate(card);
+  tiltTo(card, e.clientX, e.clientY);
 });
+addEventListener('pointermove', e => {
+  if (!press || e.pointerId !== press.id) return;
+  if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_MOVE) { deactivate(press.card); press = null; return; }
+  tiltTo(press.card, e.clientX, e.clientY);
+});
+addEventListener('pointerup', e => {
+  if (!press || e.pointerId !== press.id) return;
+  const card = press.card; press = null;
+  openCard(card);
+});
+addEventListener('pointercancel', e => {            // палец ушёл в прокрутку — гасим, ничего не открываем
+  if (!press || e.pointerId !== press.id) return;
+  deactivate(press.card); press = null;
+});
+
+function openCard(card){
+  activate(card);
+  clearTimeout(openTimer); clearTimeout(driftTimer);
+  // карточка плавно «покачивается» в другую сторону, чтобы эффект было видно
+  const t = card.querySelector('.tilt');
+  const m = /rotateY\(([-\d.]+)deg\) rotateX\(([-\d.]+)deg\)/.exec(t.style.transform);
+  if (m) driftTimer = setTimeout(() => {
+    t.style.transform = `perspective(700px) rotateY(${(-m[1]*.45).toFixed(2)}deg) rotateX(${(-m[2]*.45).toFixed(2)}deg) scale(1.08)`;
+  }, 550);
+  // даём эффекту отыграть, потом открываем день
+  openTimer = setTimeout(() => openDay(+card.dataset.i), OPEN_DELAY);
+}
+
+// клавиатура (Enter/пробел на карточке): нажатие пальцем/мышью уже обработано выше
+cards.forEach(card => card.addEventListener('click', e => {
+  if (e.detail !== 0 || card.classList.contains('is-locked')) return;
+  activate(card);
+  card.querySelector('.tilt').style.transform = `perspective(700px) rotateX(6deg) rotateY(-8deg) scale(1.06)`;
+  openCard(card);
+}));
 
 /* ---------- шторка ---------- */
 const sheet = document.getElementById("sheet"), closeBtn = document.getElementById("closeBtn");
