@@ -69,12 +69,10 @@
     padding-top:var(--top-h,300px);
     padding-bottom:calc(52px + 20px + env(safe-area-inset-bottom,0px));
   }
-  .day{
-    position:relative;display:flex;align-items:flex-start;
-    opacity:0;transform:translateY(18px);
-    transition:opacity .6s ease, transform .7s cubic-bezier(.2,.8,.2,1);
-  }
-  .day.in{opacity:1;transform:none}
+  .day{position:relative;display:flex;align-items:flex-start}
+  /* текст проявляется на месте, без сдвига */
+  .day .txt{opacity:0;transition:opacity .9s ease .15s}
+  .day.in .txt{opacity:1}
   /* текст слева, прижат вправо к фото */
   .txt{
     flex:none;width:43%;padding-left:14%;padding-right:calc(var(--u) * 6);padding-top:calc(var(--u) * 2);
@@ -89,11 +87,16 @@
   .ph{
     position:relative;flex:none;display:block;cursor:pointer;margin-left:1.8%;
     outline:none;-webkit-tap-highlight-color:transparent;
-    transition:transform .25s ease;
+    overflow:hidden;
   }
   .ph:focus-visible{outline:1px dashed var(--dark);outline-offset:3px}
-  .ph img{display:block;width:100%;height:auto}
-  .ph:active{transform:scale(.985)}
+  .ph img{display:block;width:100%;height:100%;object-fit:cover;
+    transform:scale(1.14);filter:blur(5px);
+    transition:transform 1.4s cubic-bezier(.2,.7,.2,1), filter 1s ease}
+  .day.in .ph img{transform:none;filter:none}
+  /* нажатие: короткая вспышка света, без сдвига (не срабатывает при прокрутке) */
+  .ph::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .45s ease}
+  .ph.tap::after{opacity:.22;transition:none}
   /* замок на закрытых днях */
   .lock{
     position:absolute;left:0;right:0;top:var(--ly,42%);
@@ -103,7 +106,7 @@
   }
   .lock svg{width:calc(var(--u) * 22);height:calc(var(--u) * 26)}
   .lock span{font-size:clamp(8px,calc(var(--u) * 7.2),12px);line-height:.95;letter-spacing:-.02em;transform:scaleY(1.25)}
-  .day.nudge .ph{animation:nudge .45s ease}
+  .day.nudge .lock svg{animation:nudge .45s ease}
   @keyframes nudge{20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
 
   /* снежинки */
@@ -181,8 +184,8 @@
   .close:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
   @media (prefers-reduced-motion:reduce){
-    .day,.sheet,.flake{transition:none;animation:none}
-    .day{opacity:1;transform:none}
+    .sheet,.flake,.day .txt,.ph img{transition:none;animation:none}
+    .day .txt{opacity:1}.ph img{transform:none;filter:none}
   }
 </style>
 </head>
@@ -241,6 +244,7 @@
    open   – true = урок открыт (фото шире, до края экрана, текст описания белый)
             false = «в клубе»: замок + «((материал доступен только в клубе))»
    w      – ширина фото в долях экрана (необязательно)
+   ar     – пропорции фото «ширина/высота» в пикселях, чтобы лента не прыгала при загрузке
    tag, blocks – содержимое шторки для открытых дней:
      { text:"абзац" } { video:"https://…/embed/…" | "x.mp4" | "" } { steps:["…","…"] }
      { file:"files/x.pdf", name:"…", size:"…" } { link:"https://…", name:"…", note:"…" } { heading:"…" }
@@ -248,19 +252,19 @@
 const START = new Date(2026, 10, 30);   // первый день — 30 ноября 2026 (пн.)
 const DAYS = [
   { title:"задание ((1))", desc:"создаём рилс на охват используя боли твоих подписчиков",
-    img:"images/day1.webp", open:false, w:.405, ly:"40%" },
+    img:"images/day1.webp", ar:"540/676", open:false, w:.405, ly:"40%" },
   { title:"лекция\n«боли твоих\nклиентов»", desc:"лекция о том, как нативно подсвечивать боли ваших клиентов которые вы закрываете услугой",
-    img:"images/day2.webp", open:true, w:.555, tag:"лекция", blocks:[
+    img:"images/day2.webp", ar:"740/588", open:true, w:.555, tag:"лекция", blocks:[
       { video:"" },
       { text:"Лекция о том, как нативно подсвечивать боли ваших клиентов, которые вы закрываете своей услугой." } ]},
   { title:"проверка\nсценариев", desc:"в чате\nклуба",
-    img:"images/day3.webp", open:false, w:.405, ly:"46%" },
+    img:"images/day3.webp", ar:"540/680", open:false, w:.405, ly:"46%" },
   { title:"подборка\nидей для съёмки\nрилсов", desc:"примеры того, как снимать говорящую голову",
-    img:"images/day4.webp", open:true, w:.54, tag:"подборка", blocks:[
+    img:"images/day4.webp", ar:"724/732", open:true, w:.54, tag:"подборка", blocks:[
       { text:"Примеры того, как снимать говорящую голову, чтобы видео досматривали." },
       { video:"" } ]},
   { title:"подборка\nсубтитров", desc:"варианты шрифтовых композиций для субтитров",
-    img:"images/day5.webp", open:false, w:.40, ly:"26%" },
+    img:"images/day5.webp", ar:"532/636", open:false, w:.40, ly:"26%" },
 ];
 /* снежинки: x, y и размер в единицах макета (ширина экрана = 338), y — от начала ленты */
 const FLAKES = [[33,34,40],[312,120,42],[67,307,40],[310,465,40],[120,602,40]];
@@ -296,8 +300,8 @@ list.innerHTML = DAYS.map((d, i) => {
       <span class="ttl">${esc(d.title)}</span>
       <span class="desc">${esc(d.desc)}</span>
     </div>
-    <button class="ph" style="width:${(d.w || .405) * 100}%" aria-label="${esc(d.title)}${d.open ? '' : ' — доступно в клубе'}">
-      <img src="${esc(d.img)}" alt="" ${i > 1 ? 'loading="lazy"' : ''}>
+    <button class="ph" style="width:${(d.w || .405) * 100}%;${d.ar ? `aspect-ratio:${d.ar}` : ''}" aria-label="${esc(d.title)}${d.open ? '' : ' — доступно в клубе'}">
+      <img src="${esc(d.img)}" alt="" decoding="async">
       ${d.open ? '' : `<span class="lock" style="--ly:${d.ly || '42%'}">${LOCK_SVG}<span>((материал доступен<br>только в клубе))</span></span>`}
     </button>
   </section>`;
@@ -344,7 +348,7 @@ document.fonts && document.fonts.ready.then(fitTop);
 /* плавное появление при прокрутке */
 const io = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
-}), { rootMargin:'0px 0px -8% 0px' });
+}), { rootMargin:'0px 0px -12% 0px' });
 document.querySelectorAll('.day').forEach(d => io.observe(d));
 
 /* нажатия */
@@ -360,6 +364,7 @@ function lockedTap(day){
 list.addEventListener('click', e => {
   const ph = e.target.closest('.ph'); if (!ph) return;
   const day = ph.closest('.day'), i = +day.dataset.i;
+  ph.classList.add('tap'); requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.remove('tap')));
   if (day.classList.contains('is-locked')) return lockedTap(day);
   haptic('impact','medium');
   openDay(i);
