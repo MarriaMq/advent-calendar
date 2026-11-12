@@ -13,14 +13,15 @@
     --white:#ffffff;       /* шапка, подзаголовок, текст открытых дней, снежинки */
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:var(--bg);color:var(--dark)}
+  /* страница сама не прокручивается и не оттягивается — прокручивается только лента */
+  html,body{background:var(--bg);color:var(--dark);height:100%;overflow:hidden;overscroll-behavior:none}
   body{
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
     -webkit-tap-highlight-color:transparent;
   }
-  body.locked{overflow:hidden}
+  body.locked .list{overflow:hidden}
   button{font:inherit;color:inherit;background:none;border:0}
 
   /* ---------- закреплённая верхняя часть: шапка + заголовок + звезда ---------- */
@@ -61,7 +62,10 @@
 
   /* ---------- лента дней ---------- */
   .list{
-    position:relative;max-width:560px;margin:0 auto;
+    position:fixed;inset:0;z-index:1;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:none;            /* без «резинки»: ленту нельзя оттянуть пальцем */
+    padding-left:max(0px, calc((100% - 560px) / 2));padding-right:max(0px, calc((100% - 560px) / 2));
     padding-top:var(--top-h,300px);
     padding-bottom:calc(52px + 20px + env(safe-area-inset-bottom,0px));
   }
@@ -359,11 +363,11 @@ function check(stagger){
     if (d.getBoundingClientRect().top < edge) { reveal(d, stagger); return false; }
     return true;
   });
-  if (!pending.length) removeEventListener('scroll', onScroll);
+  if (!pending.length) list.removeEventListener('scroll', onScroll);
 }
 const onScroll = () => check(false);
 check(true);                                   // то, что видно сразу, — по очереди сверху вниз
-addEventListener('scroll', onScroll, {passive:true});
+list.addEventListener('scroll', onScroll, {passive:true});
 addEventListener('resize', onScroll);   // дальше — сразу при прокрутке
 
 /* нажатия */
