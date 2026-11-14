@@ -78,8 +78,8 @@
   .txt .t{display:block;white-space:pre;transform:scaleY(1.2);transform-origin:100% 0;line-height:.76}
   .txt .main span{display:block;white-space:pre;line-height:var(--lh,.886)}
   .txt .ln{display:block;white-space:pre;position:relative}
-  .txt .date{font-size:calc(var(--k) * 27);line-height:.667;position:relative;top:calc(var(--k) * 2.5);right:calc(var(--k) * 3)}
-  .txt .date .ln + .ln{right:calc(var(--k) * -5)}
+  .txt .date{font-size:calc(var(--k) * 27);line-height:.667;position:relative;top:calc(var(--k) * 2.5);right:0}
+  .txt .date .ln + .ln{right:calc(var(--k) * 2)}
   .txt .main{position:relative;margin-top:calc(var(--k) * 41);font-size:calc(var(--k) * 25.5)}
   .txt .ttl{text-transform:uppercase;letter-spacing:0}
   .txt .main{line-height:.886}
@@ -348,8 +348,8 @@ function placeButtons(){
   const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--k'));
   const dpr = devicePixelRatio || 1, snap = v => Math.round(v * dpr) / dpr;
   document.querySelectorAll('.open-btn').forEach(b => {
-    b.style.top = snap(+b.dataset.top * k) + 'px';
-    b.style.height = snap(37 * k) + 'px';
+    b.style.top = snap((+b.dataset.top - 1) * k) + 'px';
+    b.style.height = snap(40 * k) + 'px';
   });
   const club = document.getElementById('club');
   club.style.height = Math.max(40, snap(82 * k)) + 'px';
