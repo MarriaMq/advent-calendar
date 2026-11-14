@@ -6,146 +6,157 @@
 <title>Content Advent Calendar</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+  /* Всё построено в единицах макета: ширина макета = 1080.
+     --k  — 1 единица макета в пикселях для ленты,
+     --kt — то же для закреплённой шапки (может быть чуть меньше, чтобы шапка была не выше трети экрана). */
   :root{
-    --bg:#b0c0d0;          /* голубо-серый фон из макета */
-    --dark:#121417;        /* заголовок и большая звезда */
-    --grey:#58626e;        /* даты, названия, текст закрытых дней */
-    --white:#ffffff;       /* шапка, подзаголовок, текст открытых дней, снежинки */
+    --bg:#b0c0d0;          /* фон */
+    --pill:#d0dde9;        /* кнопки «открыть» и «зайти в клуб» */
+    --grey:#626060;        /* текст закрытых дней */
+    --white:#ffffff;       /* текст открытых дней, шапка, подзаголовок */
+    --ink:#1b1b1b;         /* заголовок new ((conten advent)) calendar и текст кнопки клуба */
+    --k:.3611px; --kt:.3611px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   /* страница сама не прокручивается и не оттягивается — прокручивается только лента */
-  html,body{background:var(--bg);color:var(--dark);height:100%;overflow:hidden;overscroll-behavior:none}
+  html,body{background:var(--bg);color:var(--ink);height:100%;overflow:hidden;overscroll-behavior:none}
   body{
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
     -webkit-tap-highlight-color:transparent;
   }
-  body.locked .list{overflow:hidden}
-  button{font:inherit;color:inherit;background:none;border:0}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
-  /* ---------- закреплённая верхняя часть: шапка + заголовок + звезда ---------- */
+  /* ---------- закреплённая шапка ---------- */
   .top{
-    position:fixed;top:0;left:0;right:0;z-index:20;
-    background:var(--bg);
+    position:fixed;top:0;left:0;right:0;z-index:20;background:var(--bg);
     padding-top:env(safe-area-inset-top,0px);
   }
-  .top-in{position:relative;max-width:560px;margin:0 auto}
-  .head{
-    display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
-    height:calc(var(--t) * 26);padding:calc(var(--t) * 9) 4.5% 0;
-    font-size:clamp(9px,calc(var(--t) * 9),14px);line-height:1;letter-spacing:-.02em;white-space:nowrap;
-    color:var(--white);
+  .top-in{position:relative;width:calc(var(--kt) * 1080);height:calc(var(--kt) * 690);margin:0 auto}
+  .head span{
+    position:absolute;top:calc(var(--kt) * 84);
+    font-size:calc(var(--kt) * 24.5);line-height:1;letter-spacing:-.02em;white-space:nowrap;color:var(--white);
   }
-  
-  /* узкий высокий гротеск: обычный Helvetica, вытянутый по вертикали */
+  .head span:nth-child(1){left:calc(var(--kt) * 57)}
+  .head span:nth-child(2){left:calc(var(--kt) * 338)}
+  .head span:nth-child(3){left:calc(var(--kt) * 516)}
+  .head span:nth-child(4){right:calc(var(--kt) * 50)}
   .hero{
-    position:relative;z-index:1;
-    padding:calc(var(--t) * 26) 0 0 4%;
-    font-weight:400;font-size:40px;   /* точный размер подгоняет fitTop() */
-    letter-spacing:-.035em;line-height:.8;color:var(--dark);
+    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 196);
+    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.82;color:var(--ink);
+    transform:scaleY(1.1);transform-origin:0 0;
   }
-  .hero span{display:block;width:max-content;padding-top:.42em;transform:scaleY(1.55);transform-origin:0 100%;white-space:nowrap}
-  .hero .ind{padding-left:.58em}
+  .hero span{display:block;white-space:nowrap}
+  .hero .ind{padding-left:.54em}
   .tagline{
-    margin:calc(var(--t) * 8) 0 0 var(--tag-x,44%);
-    padding-bottom:calc(var(--t) * 14);
-    font-size:14px;letter-spacing:-.025em;line-height:.82;color:var(--white);
+    position:absolute;left:calc(var(--kt) * 476);top:calc(var(--kt) * 476);
+    font-size:calc(var(--kt) * 39.5);line-height:.97;letter-spacing:-.02em;color:var(--white);
   }
-  .tagline span{display:block;width:max-content;padding-top:.3em;transform:scaleY(1.4);transform-origin:0 100%;white-space:nowrap}
-  .star{
-    position:absolute;z-index:0;
-    left:calc(var(--u) * 338 - var(--t) * 102);top:calc(var(--t) * 24);
-    width:calc(var(--t) * 88);height:calc(var(--t) * 88);
-    color:var(--dark);
-  }
+  .tagline span{display:block;white-space:nowrap}
 
-  /* ---------- лента дней ---------- */
+  /* ---------- лента ---------- */
   .list{
     position:fixed;inset:0;z-index:1;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-    overscroll-behavior:none;            /* без «резинки»: ленту нельзя оттянуть пальцем */
-    padding-left:max(0px, calc((100% - 560px) / 2));padding-right:max(0px, calc((100% - 560px) / 2));
-    padding-top:var(--top-h,300px);
-    padding-bottom:calc(52px + 20px + env(safe-area-inset-bottom,0px));
+    overscroll-behavior:none;            /* без «резинки» */
+    scrollbar-width:none;
   }
-  .day{position:relative;display:flex;align-items:flex-start}
-  /* текст проявляется на месте, без сдвига */
-  .day .txt{opacity:0;transition:opacity .9s ease .15s}
-  .day.in .txt{opacity:1}
-  /* текст слева, прижат вправо к фото */
+  .list::-webkit-scrollbar{display:none}
+  .canvas{position:relative;width:calc(var(--k) * 1080);margin:0 auto}
+  .day{position:absolute;left:0;width:100%}
+  .week{
+    position:absolute;left:calc(var(--k) * 47);top:calc(var(--k) * -2);
+    font-size:calc(var(--k) * 42.4);line-height:1;letter-spacing:-.02em;color:var(--white);white-space:nowrap;
+  }
   .txt{
-    flex:none;width:43%;padding-left:14%;padding-right:calc(var(--u) * 6);padding-top:calc(var(--u) * 2);
+    position:absolute;right:calc(var(--k) * 621);top:0;   /* правый край колонки = 459 */
     text-align:right;color:var(--grey);letter-spacing:-.02em;
-    transform:scaleY(1.28);transform-origin:100% 0;
+    opacity:0;transition:opacity .9s ease .15s;
   }
-  .txt .date{font-size:clamp(8px,calc(var(--u) * 7.6),13px);line-height:.95}
-  .txt .ttl{display:block;white-space:pre-line;margin-top:calc(var(--u) * 13);font-size:clamp(8.5px,calc(var(--u) * 8.4),14px);line-height:.9;text-transform:uppercase}
-  .txt .desc{display:block;white-space:pre-line;font-size:clamp(8.5px,calc(var(--u) * 8.4),14px);line-height:.92}
+  .day.in .txt{opacity:1}
   .day.is-open .txt{color:var(--white)}
+  /* узкий вытянутый гротеск: Helvetica, растянутая по вертикали */
+  .txt .t{display:block;white-space:pre;transform:scaleY(1.2);transform-origin:100% 0;line-height:.76}
+  .txt .main span{display:block;white-space:pre;line-height:.85}
+  .txt .date{font-size:calc(var(--k) * 27)}
+  .txt .main{margin-top:calc(var(--k) * 43);font-size:calc(var(--k) * 25.5)}
+  .txt .ttl{text-transform:uppercase}
+  .txt .main{line-height:.85}
+  .open-btn{
+    position:absolute;right:0;
+    width:calc(var(--k) * 249);height:calc(var(--k) * 39);
+    border:1.5px solid var(--white);border-radius:999px;background:var(--pill);
+    color:var(--white);font-weight:700;font-size:calc(var(--k) * 26);letter-spacing:-.01em;
+    display:grid;place-items:center;
+    -webkit-tap-highlight-color:transparent;outline:none;
+  }
+  .open-btn:active{filter:brightness(.96)}
+  .open-btn:focus-visible{outline:1px dashed var(--white);outline-offset:3px}
 
   .ph{
-    position:relative;flex:none;display:block;cursor:pointer;margin-left:1.8%;
-    outline:none;-webkit-tap-highlight-color:transparent;
-    overflow:hidden;
+    position:absolute;left:calc(var(--k) * 477);top:0;display:block;overflow:hidden;
+    outline:none;-webkit-tap-highlight-color:transparent;background:#9fb0c1;
   }
-  .ph:focus-visible{outline:1px dashed var(--dark);outline-offset:3px}
-  .ph img{display:block;width:100%;height:100%;object-fit:cover;
-    transform:scale(1.14);filter:blur(5px);
-    transition:transform 1.4s cubic-bezier(.2,.7,.2,1), filter 1s ease}
+  .ph:focus-visible{outline:1px dashed var(--ink);outline-offset:3px}
+  /* параллакс: картинка чуть выше рамки и плавно ездит внутри неё при прокрутке */
+  .ph .pl{position:absolute;left:0;right:0;top:-7%;height:114%;will-change:transform}
+  .ph img{
+    display:block;width:100%;height:100%;object-fit:cover;
+    transform:scale(1.12);filter:blur(5px);
+    transition:transform 1.4s cubic-bezier(.2,.7,.2,1), filter 1s ease;
+  }
   .day.in .ph img{transform:none;filter:none}
-  /* нажатие: короткая вспышка света, без сдвига (не срабатывает при прокрутке) */
   .ph::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .45s ease}
   .ph.tap::after{opacity:.22;transition:none}
   /* замок на закрытых днях */
   .lock{
-    position:absolute;left:0;right:0;top:var(--ly,42%);
-    display:flex;flex-direction:column;align-items:center;gap:calc(var(--u) * 4);
+    position:absolute;left:0;right:0;top:39%;z-index:1;
+    display:flex;flex-direction:column;align-items:center;gap:calc(var(--k) * 10);
     color:var(--white);text-align:center;pointer-events:none;
-    filter:drop-shadow(0 0 3px rgba(0,0,0,.35));
   }
-  .lock svg{width:calc(var(--u) * 22);height:calc(var(--u) * 26)}
-  .lock span{font-size:clamp(8px,calc(var(--u) * 7.2),12px);line-height:.95;letter-spacing:-.02em;transform:scaleY(1.25)}
+  .lock svg{width:calc(var(--k) * 56);height:calc(var(--k) * 66)}
+  .lock span{font-size:calc(var(--k) * 26);line-height:.72;letter-spacing:-.02em;white-space:pre;transform:scaleY(1.2);transform-origin:50% 0}
   .day.nudge .lock svg{animation:nudge .45s ease}
-  @keyframes nudge{20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
+  @keyframes nudge{20%{transform:translateX(-6px) rotate(-6deg)}45%{transform:translateX(5px) rotate(5deg)}70%{transform:translateX(-3px)}}
 
-  /* снежинки */
-  .flake{position:absolute;z-index:2;pointer-events:none;color:var(--white);
-    animation:twinkle 4.5s ease-in-out infinite;animation-delay:var(--d,0s)}
-  @keyframes twinkle{0%,100%{opacity:.95;transform:rotate(0) scale(1)}50%{opacity:.55;transform:rotate(12deg) scale(.9)}}
+  .flake{position:absolute;z-index:2;pointer-events:none;background:url(images/flake.webp) center/contain no-repeat;
+    animation:twinkle 5s ease-in-out infinite;animation-delay:var(--d,0s)}
+  @keyframes twinkle{0%,100%{opacity:1;transform:rotate(0) scale(1)}50%{opacity:.6;transform:rotate(14deg) scale(.92)}}
 
   .toast{
-    position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:36;
+    position:fixed;left:50%;bottom:calc(var(--k) * 210 + env(safe-area-inset-bottom,0px));z-index:36;
     transform:translate(-50%,10px);opacity:0;pointer-events:none;
-    padding:9px 16px;border-radius:999px;background:rgba(18,20,23,.7);color:var(--white);
+    padding:9px 16px;border-radius:999px;background:rgba(27,27,27,.72);color:var(--white);
     font-size:13px;white-space:nowrap;transition:opacity .25s ease, transform .25s ease;
   }
   .toast.show{opacity:1;transform:translate(-50%,0)}
 
-  /* ---------- кнопка клуба: белая полоса во всю ширину ---------- */
+  /* ---------- плавающая кнопка клуба ---------- */
   .club{
-    position:fixed;left:0;right:0;bottom:0;z-index:35;
-    background:var(--white);
-    padding-bottom:env(safe-area-inset-bottom,0px);
-    transition:transform .3s ease;
+    position:fixed;left:50%;z-index:35;
+    bottom:calc(var(--k) * 70 + env(safe-area-inset-bottom,0px));
+    width:calc(var(--k) * 524);height:calc(var(--k) * 82);min-height:40px;
+    transform:translateX(-50%);
+    transition:transform .35s ease, opacity .3s ease;
   }
   .club a{
-    display:flex;align-items:center;justify-content:center;height:52px;
-    color:var(--dark);text-decoration:none;font-size:17px;letter-spacing:-.03em;
+    display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+    border:2px solid var(--white);border-radius:999px;background:var(--pill);
+    color:var(--ink);text-decoration:none;font-size:calc(var(--k) * 40.2);letter-spacing:-.02em;
   }
-  .club a span{display:inline-block;transform:scaleY(1.35)}
-  .club a:active span{opacity:.6}
-  .club.pulse a span{animation:pulse .9s ease}
-  @keyframes pulse{30%{transform:scaleY(1.35) scale(1.08)}60%{transform:scaleY(1.35) scale(.98)}}
-  .open .club{transform:translateY(110%)}
+  .club a span{display:inline-block;transform:scaleY(1.1)}
+  .club a:active{filter:brightness(.96)}
+  .club.pulse a{animation:pulse .9s ease}
+  @keyframes pulse{30%{transform:scale(1.06)}60%{transform:scale(.98)}}
+  .open .club{transform:translate(-50%,200%);opacity:0}
 
-  /* ---------- шторка с содержимым дня ---------- */
-  .scrim{position:fixed;inset:0;z-index:40;background:rgba(18,20,23,.4);opacity:0;pointer-events:none;transition:opacity .35s ease}
+  /* ---------- шторка урока ---------- */
+  .scrim{position:fixed;inset:0;z-index:40;background:rgba(27,27,27,.4);opacity:0;pointer-events:none;transition:opacity .35s ease}
   .sheet{
     position:fixed;left:0;right:0;bottom:0;z-index:50;
     max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
-    --paper:#f4f2ee;--ink:#121417;--muted:rgba(18,20,23,.55);--line:rgba(18,20,23,.14);
-    --surface:rgba(18,20,23,.06);--surface-press:rgba(18,20,23,.11);
+    --paper:#f4f2ee;--ink:#1b1b1b;--muted:rgba(27,27,27,.55);--line:rgba(27,27,27,.14);
+    --surface:rgba(27,27,27,.06);--surface-press:rgba(27,27,27,.11);
     background:var(--paper);color:var(--ink);border-radius:18px 18px 0 0;
     padding:10px 16px calc(28px + env(safe-area-inset-bottom));
     transform:translateY(105%);transition:transform .5s cubic-bezier(.2,.8,.2,1);
@@ -164,7 +175,6 @@
   .steps li{counter-increment:s;position:relative;padding:12px 0 12px 40px;border-top:1px solid var(--line);font-size:15px;line-height:1.45}
   .steps li:last-child{border-bottom:1px solid var(--line)}
   .steps li::before{content:"(" counter(s,decimal-leading-zero) ")";position:absolute;left:0;top:13px;font-size:11px;font-style:italic;color:var(--muted)}
-  .steps img{display:block;width:100%;margin-top:10px}
   .row{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;margin-bottom:8px;border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
   .row:active{background:var(--surface-press)}
   .row .ic{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:15px}
@@ -172,54 +182,35 @@
   .row .tx b{display:block;font-weight:500;font-size:14px;line-height:1.25}
   .row .tx small{display:block;font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .go{flex:none;font-size:16px;color:var(--muted)}
-  .video{position:relative;aspect-ratio:16/9;background:rgba(18,20,23,.08);margin:6px 0 16px;overflow:hidden}
+  .video{position:relative;aspect-ratio:16/9;background:rgba(27,27,27,.08);margin:6px 0 16px;overflow:hidden}
   .video iframe,.video video{position:absolute;inset:0;width:100%;height:100%;border:0}
   .video .vph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:12px}
   .close{
-    position:sticky;top:0;float:right;margin-top:-4px;
-    background:var(--ink);color:var(--paper);
-    width:32px;height:32px;border-radius:50%;font-size:16px;line-height:32px;cursor:pointer;
+    position:sticky;top:0;float:right;margin-top:-4px;background:var(--ink);color:var(--paper);
+    width:32px;height:32px;border-radius:50%;font-size:16px;line-height:32px;
     outline:none;-webkit-tap-highlight-color:transparent;
   }
   .close:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
   @media (prefers-reduced-motion:reduce){
-    .sheet,.flake,.day .txt,.ph img{transition:none;animation:none}
-    .day .txt{opacity:1}.ph img{transform:none;filter:none}
+    .sheet,.flake,.txt,.ph img{transition:none;animation:none}
+    .txt{opacity:1}.ph img{transform:none;filter:none}
   }
 </style>
 </head>
 <body>
 
-<!-- закреплено сверху, не прокручивается -->
-<div class="top" id="top">
-  <div class="top-in">
-    <header class="head">
-      <span>ne(w) content dump</span>
-      <span>2027</span>
-      <span>content advent calendar</span>
-      <span>by dasha.brisaniuk</span>
-    </header>
-    <svg class="star" viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.1">
-      <line x1="50" y1="0" x2="50" y2="100"/><line x1="0" y1="50" x2="100" y2="50"/>
-      <line x1="16" y1="16" x2="84" y2="84"/><line x1="84" y1="16" x2="16" y2="84"/>
-    </svg>
-    <h1 class="hero">
-      <span class="ind">new</span>
-      <span>((content advent))</span>
-      <span class="ind">calendar</span>
-    </h1>
-    <p class="tagline">
-      <span>заходим в 2027</span>
-      <span>не с обещаниями, а с готовым</span>
-      <span>контентом, который нативно</span>
-      <span>продаёт</span>
-    </p>
-  </div>
-</div>
+<!-- закреплено сверху -->
+<div class="top" id="top"><div class="top-in">
+  <header class="head">
+    <span>ne(w) content dump</span><span>2027</span><span>content advent calendar</span><span>by dasha.brisaniuk</span>
+  </header>
+  <h1 class="hero"><span class="ind">new</span><span>((conten advent))</span><span class="ind">calendar</span></h1>
+  <p class="tagline"><span>заходим в 2027</span><span>не с обещаниями, а с готовым</span><span>контентом, который нативно</span><span>продаёт</span></p>
+</div></div>
 
-<!-- прокручивается только это -->
-<main class="list" id="list"></main>
+<!-- прокручивается только лента -->
+<main class="list" id="list"><div class="canvas" id="canvas"></div></main>
 
 <div class="toast" id="toast" role="status">материал доступен только в клубе</div>
 <nav class="club" id="club"><a id="clubBtn" href="https://t.me/newcontentdump_bot?start=" target="_blank" rel="noopener"><span>зайти в клуб</span></a></nav>
@@ -237,37 +228,55 @@
 
 <script>
 /* =========================================================
-   ДАННЫЕ: один объект = один день (сверху вниз).
-   title  – название (заглавными в ленте)
-   desc   – короткое описание под названием
-   img    – фото дня
-   open   – true = урок открыт (фото шире, до края экрана, текст описания белый)
-            false = «в клубе»: замок + «((материал доступен только в клубе))»
-   w      – ширина фото в долях экрана (необязательно)
-   ar     – пропорции фото «ширина/высота» в пикселях, чтобы лента не прыгала при загрузке
-   tag, blocks – содержимое шторки для открытых дней:
-     { text:"абзац" } { video:"https://…/embed/…" | "x.mp4" | "" } { steps:["…","…"] }
+   ДАННЫЕ — 28 дней сверху вниз (с 30 ноября 2026).
+   title – название (в ленте заглавными), \n — перенос строки как в макете
+   desc  – описание под названием
+   open  – true: день открыт (белый текст + кнопка), false: «в клубе» (серый текст + замок)
+   btn   – текст кнопки у открытого дня (по умолчанию «открыть»)
+   week  – подпись «неделя((N))» слева
+   tag, blocks – содержимое шторки урока (как раньше):
+     { text:"…" } { video:"https://…/embed/…" | "x.mp4" | "" } { steps:["…"] }
      { file:"files/x.pdf", name:"…", size:"…" } { link:"https://…", name:"…", note:"…" } { heading:"…" }
+   Фото: photos/01.webp … photos/28.webp, размеры и места — как в макете (массив BOX ниже).
    ========================================================= */
-const START = new Date(2026, 10, 30);   // первый день — 30 ноября 2026 (пн.)
+const START = new Date(2026, 10, 30);
+const IDEAS = { title:"подборка\nидей для съемки\nрилсов", desc:"примеры того, как\nснимать говорящую\nголову" };
+const CHECK = { title:"проверка\nсценариев", desc:"в чате клуба" };
 const DAYS = [
-  { title:"задание ((1))", desc:"создаём рилс на охват используя боли твоих подписчиков",
-    img:"images/day1.webp", ar:"540/676", open:false, w:.405, ly:"40%" },
-  { title:"лекция\n«боли твоих\nклиентов»", desc:"лекция о том, как нативно подсвечивать боли ваших клиентов которые вы закрываете услугой",
-    img:"images/day2.webp", ar:"740/588", open:true, w:.555, tag:"лекция", blocks:[
-      { video:"" },
-      { text:"Лекция о том, как нативно подсвечивать боли ваших клиентов, которые вы закрываете своей услугой." } ]},
-  { title:"проверка\nсценариев", desc:"в чате\nклуба",
-    img:"images/day3.webp", ar:"540/680", open:false, w:.405, ly:"46%" },
-  { title:"подборка\nидей для съёмки\nрилсов", desc:"примеры того, как снимать говорящую голову",
-    img:"images/day4.webp", ar:"724/732", open:true, w:.54, tag:"подборка", blocks:[
-      { text:"Примеры того, как снимать говорящую голову, чтобы видео досматривали." },
-      { video:"" } ]},
-  { title:"подборка\nсубтитров", desc:"варианты шрифтовых композиций для субтитров",
-    img:"images/day5.webp", ar:"532/636", open:false, w:.40, ly:"26%" },
+  { week:1, open:false, title:"задание\n((1))", desc:"создаем рилс на\nохват используя боли\nтвоих подписчиков\n+\nподборка болей\nпо каждой\nнише" },
+  { open:true,  title:"лекция\n“боли твоих\nклиентов”", desc:"лекция о том, как нативно\nподсвечивать боли\nваших клиентов\nкоторые вы закрываете\nуслугой", tag:"лекция" },
+  { open:false, title:"проверка\nсценариев", desc:"в чате\nклуба" },
+  { open:true,  ...IDEAS, tag:"подборка" },
+  { open:false, title:"подборка\nсубтитров", desc:"варианты\nшрифтовых\nкомпозиций\nдля субтитров" },
+  { open:true,  title:"подборка\nобложек для\nрилсов", desc:"шрифтовые\nкомпозиции и идеи дизайна\nдля обложек с текстом", tag:"подборка" },
+  { open:false, title:"прямой эфир\nразбор отснятых\nрилсов и сценариев", desc:"по ((1)) заданию\nиспользуя боли\nклиентов" },
+  { week:2, open:true, title:"задание\n((2))", desc:"рилс на нативную\nпродажу своей услуги\nчерез боль\n+\nпримеры болей\nпод каждую нишу", tag:"задание" },
+  { open:false, title:"лекция\n“нативные продажи”", desc:"своих услуг через\nболи своих клиентов" },
+  { open:false, ...CHECK },
+  { open:true,  ...IDEAS, tag:"подборка" },
+  { open:false, title:"нативные\nзаходы\nв сторис", desc:"для прогрева\nболи" },
+  { open:true,  title:"рамки для\nмонтажа рилсов", desc:"шаблоны, фоны, рамки\nдля досматриваемых\nрилсов", tag:"шаблоны" },
+  { open:false, title:"прямой эфир\nразбор  рилсов\nи сценариев", desc:"по ((2)) заданию" },
+  { week:3, open:false, title:"задание\n((3))", desc:"создаем рилс\nс прямой продажей\nсвоей услуги" },
+  { open:true,  title:"лекция\n“прямые продажи”\nчерез боль", desc:"как без кринжа продавать\nсвои услуги донося\nих ценности", tag:"лекция" },
+  { open:false, ...CHECK },
+  { open:true,  ...IDEAS, tag:"подборка" },
+  { open:false, title:"заходы\nв сторис", desc:"через боли\nпо каждой нише" },
+  { open:true,  title:"подборка\nидей лёгкого\nмонтажа", desc:"для рилсов с\nговорящей головой", tag:"подборка" },
+  { open:false, title:"прямой эфир\nразбор  рилсов\nи сценариев", desc:"по ((3)) заданию" },
+  { week:4, open:true, title:"задание\n((4))", desc:"создаем\nрилс-воронку\nчерез боль\nклиента", tag:"задание" },
+  { open:false, title:"лекция\n“нативные\nворонки”", desc:"строим путь клиента\nот рилса к продаже\nбез кодовых слов" },
+  { open:false, ...CHECK },
+  { open:true,  ...IDEAS, tag:"подборка" },
+  { open:true,  title:"заходы\nсторис\nс продажами", desc:"пул идей как\nнативно начать\nпродающие сторис", tag:"идеи" },
+  { open:false, title:"туториал\nмонтажа", desc:"визуального хука\nдля рилса" },
+  { open:true,  title:"прямой эфир\nразбор рилсов\nи сценариев\n((4))", desc:"задания", btn:"зайти на эфир", tag:"эфир" },
 ];
-/* снежинки: x, y и размер в единицах макета (ширина экрана = 338), y — от начала ленты */
-const FLAKES = [[33,34,40],[312,120,42],[67,307,40],[310,465,40],[120,602,40]];
+/* места фото в макете: [верх, ширина, высота] в единицах макета (ширина экрана = 1080) */
+const BOX = [[756,432,540],[1296,594,484],[1784,432,540],[2328,582,584],[2916,426,512],[3428,504,744],[4176,420,364],[4540,603,412],[4952,366,408],[5364,300,372],[5748,600,784],[6536,492,336],[6876,600,644],[7524,366,244],[7768,354,416],[8192,600,672],[8864,318,320],[9184,492,520],[9708,324,404],[10116,432,536],[10652,306,384],[11036,603,752],[11792,450,396],[12192,336,380],[12576,456,612],[13192,600,348],[13536,420,384],[13924,600,528]];
+/* снежинки: центр x, центр y, размер — в единицах макета */
+const FLAKES = [[92,992,140],[997,1125,122],[215,1719,122],[997,2227,122],[388,2754,128],[988,2990,140],[116,3342,140],[403,3831,122],[974,4258,128],[113,4457,134],[1017,5297,122],[112,5594,128],[383,6159,134],[204,6578,140],[379,7265,134],[991,7621,122],[105,7905,122],[386,8616,140],[881,8953,134],[118,9246,128],[399,9619,122],[1011,9819,134],[117,10187,122],[388,10556,128],[861,10743,122],[112,11174,128],[395,11719,134],[994,12128,128],[230,12418,128],[1003,12787,122],[391,13091,134],[105,13481,134],[984,13820,128],[383,14351,134],[934,14614,140]];
+const LIST_TOP = 690;              // где в макете кончается закреплённая шапка
 </script>
 <script>
 const TG = window.Telegram && window.Telegram.WebApp;
@@ -279,74 +288,63 @@ function haptic(kind, type){
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const WD = ['вс.','пн.','вт.','ср.','чт.','пт.','сб.'];
 const dateOf = i => { const d = new Date(START); d.setDate(START.getDate() + i); return d; };
+const dd = d => String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0');
+const LOCK_SVG = `<svg viewBox="0 0 64 76" fill="none" stroke="currentColor" stroke-width="4.5" aria-hidden="true">
+  <path d="M15 33V22a17 17 0 0 1 34 0v11"/><rect x="5" y="33" width="54" height="40" rx="5"/>
+  <circle cx="32" cy="50" r="4.5" fill="currentColor" stroke="none"/><path d="M32 52v9"/></svg>`;
 
-const LOCK_SVG = `<svg viewBox="0 0 22 26" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
-  <path d="M5 11V7a6 6 0 0 1 12 0v4"/><rect x="1.5" y="11" width="19" height="13.5" rx="1.5"/>
-  <circle cx="11" cy="16.5" r="1.6" fill="currentColor" stroke="none"/><path d="M11 17.5v3"/></svg>`;
-const FLAKE_SVG = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
-  <defs><radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
-  <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".85">
-    <line x1="50" y1="2" x2="50" y2="98"/><line x1="2" y1="50" x2="98" y2="50"/>
-    <line x1="18" y1="18" x2="82" y2="82"/><line x1="82" y1="18" x2="18" y2="82"/></g>
-  <circle cx="50" cy="50" r="9" fill="url(#glow)"/><circle cx="50" cy="50" r="2.6" fill="#fff"/></svg>`;
+const list = document.getElementById('list'), canvas = document.getElementById('canvas');
+const u = v => `calc(var(--k) * ${v})`;
+const lastBottom = BOX[BOX.length-1][0] + BOX[BOX.length-1][2];
+const END = lastBottom + 112 + 82 + 70;                 // зазор до кнопки клуба + кнопка + её отступ снизу
+canvas.style.height = u(END - LIST_TOP);
+const Y = y => u(y - LIST_TOP);
 
-const list = document.getElementById('list');
-list.innerHTML = DAYS.map((d, i) => {
-  const dt = dateOf(i);
-  const dd = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0');
-  return `<section class="day ${d.open ? 'is-open' : 'is-locked'}" data-i="${i}">
+canvas.innerHTML = DAYS.map((d, i) => {
+  const [top, w, h] = BOX[i], dt = dateOf(i);
+  return `<section class="day ${d.open ? 'is-open' : 'is-locked'}" data-i="${i}" style="top:${Y(top)}">
+    ${d.week ? `<div class="week">неделя((${d.week}))</div>` : ''}
     <div class="txt">
-      <div class="date">((${dd}))<br>${WD[dt.getDay()]}</div>
-      <span class="ttl">${esc(d.title)}</span>
-      <span class="desc">${esc(d.desc)}</span>
+      <span class="t date">((${dd(dt)}))\n${WD[dt.getDay()]}</span>
+      <span class="t main"><span class="ttl">${esc(d.title)}</span><span class="desc">${esc(d.desc)}</span></span>
+      ${d.open ? `<button class="open-btn" data-open>${esc(d.btn || 'открыть')}</button>` : ''}
     </div>
-    <button class="ph" style="width:${(d.w || .405) * 100}%;${d.ar ? `aspect-ratio:${d.ar}` : ''}" aria-label="${esc(d.title)}${d.open ? '' : ' — доступно в клубе'}">
-      <img src="${esc(d.img)}" alt="" decoding="async">
-      ${d.open ? '' : `<span class="lock" style="--ly:${d.ly || '42%'}">${LOCK_SVG}<span>((материал доступен<br>только в клубе))</span></span>`}
+    <button class="ph" style="width:${u(w)};height:${u(h)}" aria-label="${esc(d.title.replace(/\n/g,' '))}${d.open ? '' : ' — доступно в клубе'}">
+      <span class="pl"><img src="photos/${String(i+1).padStart(2,'0')}.webp" alt="" decoding="async"></span>
+      ${d.open ? '' : `<span class="lock">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
     </button>
   </section>`;
 }).join('') + FLAKES.map(([x, y, s], k) =>
-  `<span class="flake" style="left:calc(var(--u) * ${x - s/2});top:calc(var(--top-h) + var(--u) * ${y - s/2});width:calc(var(--u) * ${s});height:calc(var(--u) * ${s});--d:${-k * 1.3}s">${FLAKE_SVG}</span>`
+  `<span class="flake" style="left:${u(x - s/2)};top:${Y(y - s*.485)};width:${u(s)};height:${u(s*.97)};--d:${-(k % 7) * .8}s"></span>`
 ).join('');
 
-/* всё в ленте и шапке масштабируется от ширины, как в макете (338 px) */
-function fitTop(){
-  const W = Math.min(innerWidth, 560);
-  const u = W / 338;
-  const root = document.documentElement.style;
-  root.setProperty('--u', u + 'px');
-  const topEl = document.getElementById('top'), top = document.querySelector('.top-in');
-  const hero = document.querySelector('.hero'), tag = document.querySelector('.tagline');
-  const lines = [...hero.querySelectorAll('span')], tl = [...tag.querySelectorAll('span')];
-  hero.style.fontSize = '40px';
-  const w0 = Math.max(...lines.map(l => l.offsetWidth));
-  const full = 40 * W * .68 / w0;                    // «((content advent))» ≈ 68% ширины
-  const TARGET = innerHeight / 3;                     // закреплённая часть — треть экрана
-  const place = k => {
-    root.setProperty('--t', (u * k) + 'px');
-    hero.style.fontSize = (full * k) + 'px';
-    // подзаголовок начинается у конца «r» в calendar
-    const x = lines[2].getBoundingClientRect().right - top.getBoundingClientRect().left;
-    top.style.setProperty('--tag-x', x + 'px');
-    tag.style.fontSize = '14px';
-    const tw = Math.max(...tl.map(l => l.offsetWidth));
-    tag.style.fontSize = Math.max(9, Math.min(20 * k, 14 * (W * .95 - x) / tw)) + 'px';
-    return topEl.offsetHeight;
-  };
-  let k = 1;
-  for (let n = 0; n < 4; n++) {
-    const h = place(k);
-    if (h <= TARGET + 1) break;
-    k = Math.max(.45, k * TARGET / h);
-  }
-  root.setProperty('--top-h', place(k) + 'px');
+/* кнопка «открыть» — сразу под описанием, на 19 единиц ниже последней строки */
+function placeButtons(){
+  document.querySelectorAll('.txt').forEach(t => {
+    const b = t.querySelector('.open-btn'); if (!b) return;
+    const m = t.querySelector('.main');
+    const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--k'));
+    const bottom = m.offsetTop + m.offsetHeight * 1.2;   // с учётом вытягивания scaleY(1.2)
+    b.style.top = (bottom + 19 * k) + 'px';
+  });
 }
-fitTop();
-addEventListener('resize', fitTop);
-document.fonts && document.fonts.ready.then(fitTop);
 
-/* плавное появление при прокрутке */
-/* фото на первом экране тоже «наводятся на резкость» — по очереди, когда картинка уже загружена */
+/* масштаб от ширины экрана; шапка — не выше трети экрана */
+function fit(){
+  const W = Math.min(innerWidth, 560);
+  const k = W / 1080;
+  const kt = Math.min(k, (innerHeight / 3) / LIST_TOP);
+  const root = document.documentElement.style;
+  root.setProperty('--k', k + 'px');
+  root.setProperty('--kt', kt + 'px');
+  const topH = document.getElementById('top').offsetHeight;
+  canvas.style.marginTop = (topH - 0) + 'px';
+  canvas.style.height = `calc(var(--k) * ${END - LIST_TOP})`;
+  placeButtons();
+  parallax();
+}
+
+/* ---------- появление: фото наводятся на резкость ---------- */
 let queue = 0;
 function reveal(day, stagger){
   const img = day.querySelector('img');
@@ -354,23 +352,42 @@ function reveal(day, stagger){
   const go = () => { if (done) return; done = true;
     setTimeout(() => day.classList.add('in'), stagger ? 250 + queue++ * 220 : 0); };
   (img.decode ? img.decode() : Promise.resolve()).then(go, go);
-  setTimeout(go, 1000);                     // не ждём медленную загрузку дольше секунды
+  setTimeout(go, 1000);
 }
 let pending = [...document.querySelectorAll('.day')];
 function check(stagger){
-  const edge = innerHeight * .88;
+  const edge = innerHeight * .9;
   pending = pending.filter(d => {
     if (d.getBoundingClientRect().top < edge) { reveal(d, stagger); return false; }
     return true;
   });
-  if (!pending.length) list.removeEventListener('scroll', onScroll);
 }
-const onScroll = () => check(false);
-check(true);                                   // то, что видно сразу, — по очереди сверху вниз
-list.addEventListener('scroll', onScroll, {passive:true});
-addEventListener('resize', onScroll);   // дальше — сразу при прокрутке
 
-/* нажатия */
+/* ---------- параллакс внутри рамок ---------- */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pls = [...document.querySelectorAll('.ph .pl')];
+let ticking = false;
+function parallax(){
+  ticking = false;
+  if (reduce) return;
+  const vh = innerHeight;
+  for (const p of pls) {
+    const r = p.parentElement.getBoundingClientRect();
+    if (r.bottom < -50 || r.top > vh + 50) continue;
+    const c = (r.top + r.height / 2 - vh / 2) / vh;          // -1…1 от центра экрана
+    p.style.transform = `translate3d(0,${(-c * r.height * .06).toFixed(1)}px,0)`;
+  }
+}
+list.addEventListener('scroll', () => {
+  check(false);
+  if (!ticking) { ticking = true; requestAnimationFrame(parallax); }
+}, {passive:true});
+addEventListener('resize', fit);
+document.fonts && document.fonts.ready.then(placeButtons);
+fit();
+check(true);
+
+/* ---------- нажатия ---------- */
 let toastT;
 function lockedTap(day){
   haptic('notify','warning');
@@ -380,16 +397,17 @@ function lockedTap(day){
   const club = document.getElementById('club');
   club.classList.remove('pulse'); void club.offsetWidth; club.classList.add('pulse');
 }
-list.addEventListener('click', e => {
-  const ph = e.target.closest('.ph'); if (!ph) return;
-  const day = ph.closest('.day'), i = +day.dataset.i;
-  ph.classList.add('tap'); requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.remove('tap')));
+canvas.addEventListener('click', e => {
+  const hit = e.target.closest('.ph, [data-open]'); if (!hit) return;
+  const day = hit.closest('.day'), i = +day.dataset.i;
   if (day.classList.contains('is-locked')) return lockedTap(day);
+  const ph = day.querySelector('.ph');
+  ph.classList.add('tap'); requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.remove('tap')));
   haptic('impact','medium');
   openDay(i);
 });
 
-/* шторка */
+/* ---------- шторка ---------- */
 const sheet = document.getElementById('sheet'), closeBtn = document.getElementById('closeBtn');
 function videoHTML(src){
   if (!src) return `<div class="video"><div class="vph">здесь будет видео</div></div>`;
@@ -400,35 +418,36 @@ function blockHTML(b){
   if ('video' in b) return videoHTML(b.video);
   if (b.heading)    return `<h3>${esc(b.heading)}</h3>`;
   if (b.text)       return b.text.split(/\n\n+/).map(p => `<p>${esc(p)}</p>`).join('');
-  if (b.steps)      return `<ol class="steps">${b.steps.map(s => { const o = typeof s === 'string' ? {text:s} : s;
-                       return `<li>${esc(o.text)}${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy">` : ''}</li>`; }).join('')}</ol>`;
+  if (b.steps)      return `<ol class="steps">${b.steps.map(s => `<li>${esc(typeof s === 'string' ? s : s.text)}</li>`).join('')}</ol>`;
   if (b.file)       return `<a class="row" href="${esc(b.file)}" download><span class="ic" aria-hidden="true">↓</span>
                        <span class="tx"><b>${esc(b.name || 'Скачать файл')}</b><small>${esc(b.size || '')}</small></span></a>`;
   if (b.link)       return `<a class="row" href="${esc(b.link)}" target="_blank" rel="noopener"><span class="ic" aria-hidden="true">↗</span>
                        <span class="tx"><b>${esc(b.name || b.link)}</b><small>${esc(b.note || new URL(b.link).hostname)}</small></span><span class="go" aria-hidden="true">›</span></a>`;
   return '';
 }
-let lastPh = null, usingKeyboard = false;
+let lastEl = null, usingKeyboard = false;
 addEventListener('keydown', e => { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ') usingKeyboard = true; if (e.key === 'Escape') closeDay(); });
 addEventListener('pointerdown', () => usingKeyboard = false, true);
 function openDay(i){
   const d = DAYS[i], dt = dateOf(i);
-  lastPh = document.querySelector(`.day[data-i="${i}"] .ph`);
-  sNum.textContent = `((${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')})) ${WD[dt.getDay()]}`;
+  lastEl = document.activeElement;
+  sNum.textContent = `((${dd(dt)})) ${WD[dt.getDay()]}`;
   sDate.textContent = dt.toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
   sTag.textContent = d.tag || ''; sTag.hidden = !d.tag;
   sTitle.textContent = d.title.replace(/\n/g,' ');
-  sImg.src = d.img; sImg.alt = '';
-  sBody.innerHTML = (d.blocks || [{ text: d.desc }]).map(blockHTML).join('');
+  sImg.src = `photos/${String(i+1).padStart(2,'0')}.webp`; sImg.alt = '';
+  sBody.innerHTML = (d.blocks || [{ text: d.desc.replace(/\n/g,' ') }, { video:'' }]).map(blockHTML).join('');
   sheet.scrollTop = 0;
-  document.body.classList.add('open','locked');
+  document.body.classList.add('open');
+  list.style.overflowY = 'hidden';
   if (usingKeyboard) closeBtn.focus({preventScroll:true});
 }
 function closeDay(){
   if (!document.body.classList.contains('open')) return;
-  document.body.classList.remove('open','locked');
+  document.body.classList.remove('open');
+  list.style.overflowY = '';
   sBody.innerHTML = '';
-  if (lastPh) usingKeyboard ? lastPh.focus({preventScroll:true}) : lastPh.blur();
+  if (lastEl && lastEl.blur) usingKeyboard ? lastEl.focus({preventScroll:true}) : lastEl.blur();
 }
 closeBtn.onclick = closeDay;
 scrim.onclick = closeDay;
@@ -445,7 +464,7 @@ sheet.addEventListener('touchend', e => {
 });
 </script>
 <script>
-/* внутри Telegram: на весь экран, без закрытия свайпом, цвета под макет */
+/* Telegram: на весь экран, без закрытия свайпом, цвета под макет */
 (function(){
   if (!IN_TG) return;
   try {
@@ -453,7 +472,7 @@ sheet.addEventListener('touchend', e => {
     TG.disableVerticalSwipes && TG.disableVerticalSwipes();
     TG.setHeaderColor && TG.setHeaderColor('#b0c0d0');
     TG.setBackgroundColor && TG.setBackgroundColor('#b0c0d0');
-    TG.setBottomBarColor && TG.setBottomBarColor('#ffffff');   // под белую кнопку клуба
+    TG.setBottomBarColor && TG.setBottomBarColor('#b0c0d0');
   } catch(e) {}
 })();
 /* кнопка клуба — ССЫЛКА НА БОТА: */
