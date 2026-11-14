@@ -32,9 +32,9 @@
     position:fixed;top:0;left:0;right:0;z-index:20;background:var(--bg);
     padding-top:env(safe-area-inset-top,0px);
   }
-  .top-in{position:relative;width:calc(var(--kt) * 1080);height:calc(var(--kt) * 690);margin:0 auto}
+  .top-in{position:relative;width:calc(var(--kt) * 1080);height:calc(var(--kt) * 612);margin:0 auto}
   .head span{
-    position:absolute;top:calc(var(--kt) * 84);
+    position:absolute;top:calc(var(--kt) * 24);
     font-size:calc(var(--kt) * 24.5);line-height:1;letter-spacing:-.02em;white-space:nowrap;color:var(--white);
   }
   .head span:nth-child(1){left:calc(var(--kt) * 57)}
@@ -42,14 +42,14 @@
   .head span:nth-child(3){left:calc(var(--kt) * 516)}
   .head span:nth-child(4){right:calc(var(--kt) * 50)}
   .hero{
-    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 196);
+    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 134);
     font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.68;color:var(--ink);
     transform:scaleY(1.22);transform-origin:0 0;
   }
   .hero span{display:block;white-space:nowrap}
   .hero .ind{padding-left:.54em}
   .tagline{
-    position:absolute;left:calc(var(--kt) * 476);top:calc(var(--kt) * 476);
+    position:absolute;left:calc(var(--kt) * 476);top:calc(var(--kt) * 414);
     font-size:calc(var(--kt) * 39.5);line-height:.97;letter-spacing:-.02em;color:var(--white);
   }
   .tagline span{display:block;white-space:nowrap}
@@ -77,15 +77,15 @@
   .day.is-open .txt{color:var(--white)}
   /* узкий вытянутый гротеск: Helvetica, растянутая по вертикали */
   .txt .t{display:block;white-space:pre;transform:scaleY(1.2);transform-origin:100% 0;line-height:.76}
-  .txt .main span{display:block;white-space:pre;line-height:.85}
+  .txt .main span{display:block;white-space:pre;line-height:.915}
   .txt .date{font-size:calc(var(--k) * 27)}
-  .txt .main{margin-top:calc(var(--k) * 43);font-size:calc(var(--k) * 25.5)}
+  .txt .main{margin-top:calc(var(--k) * 35);font-size:calc(var(--k) * 25.5)}
   .txt .ttl{text-transform:uppercase}
-  .txt .main{line-height:.85}
+  .txt .main{line-height:.915}
   .open-btn{
-    position:absolute;right:0;
+    position:absolute;right:calc(var(--k) * 616);
     width:calc(var(--k) * 249);height:calc(var(--k) * 39);
-    border:.5px solid var(--white);border-radius:999px;background:var(--pill);
+    border:1px solid var(--white);border-radius:999px;background:var(--pill);
     color:var(--white);font-weight:700;font-size:calc(var(--k) * 26);letter-spacing:0;line-height:1;
     display:flex;align-items:center;justify-content:center;padding:0 0 .16em;text-align:center;   /* строчные буквы — оптически по центру */
     -webkit-tap-highlight-color:transparent;outline:none;
@@ -110,12 +110,12 @@
   .ph.tap::after{opacity:.22;transition:none}
   /* замок на закрытых днях */
   .lock{
-    position:absolute;left:0;right:0;top:39%;z-index:1;
-    display:flex;flex-direction:column;align-items:center;gap:calc(var(--k) * 10);
+    position:absolute;left:0;right:0;top:0;z-index:1;
+    display:flex;flex-direction:column;align-items:center;gap:calc(var(--k) * 17);
     color:var(--white);text-align:center;pointer-events:none;
   }
-  .lock svg{width:calc(var(--k) * 56);height:calc(var(--k) * 66)}
-  .lock span{font-size:calc(var(--k) * 26);line-height:.72;letter-spacing:-.02em;white-space:pre;transform:scaleY(1.2);transform-origin:50% 0}
+  .lock svg{width:calc(var(--k) * 61);height:calc(var(--k) * 72)}
+  .lock span{font-size:calc(var(--k) * 26);line-height:.78;letter-spacing:-.02em;white-space:pre;transform:scaleY(1.2);transform-origin:50% 0}
   .day.nudge .lock svg{animation:nudge .45s ease}
   @keyframes nudge{20%{transform:translateX(-6px) rotate(-6deg)}45%{transform:translateX(5px) rotate(5deg)}70%{transform:translateX(-3px)}}
 
@@ -276,7 +276,12 @@ const DAYS = [
 const BOX = [[756,432,540],[1296,594,484],[1784,432,540],[2328,582,584],[2916,426,512],[3428,504,744],[4176,420,364],[4540,603,412],[4952,366,408],[5364,300,372],[5748,600,784],[6536,492,336],[6876,600,644],[7524,366,244],[7768,354,416],[8192,600,672],[8864,318,320],[9184,492,520],[9708,324,404],[10116,432,536],[10652,306,384],[11036,603,752],[11792,450,396],[12192,336,380],[12576,456,612],[13192,600,348],[13536,420,384],[13924,600,528]];
 /* снежинки: центр x, центр y, размер — в единицах макета */
 const FLAKES = [[92,992,140],[997,1125,122],[215,1719,122],[997,2227,122],[388,2754,128],[988,2990,140],[116,3342,140],[403,3831,122],[974,4258,128],[113,4457,134],[1017,5297,122],[112,5594,128],[383,6159,134],[204,6578,140],[379,7265,134],[991,7621,122],[105,7905,122],[386,8616,140],[881,8953,134],[118,9246,128],[399,9619,122],[1011,9819,134],[117,10187,122],[388,10556,128],[861,10743,122],[112,11174,128],[395,11719,134],[994,12128,128],[230,12418,128],[1003,12787,122],[391,13091,134],[105,13481,134],[984,13820,128],[383,14351,134],[934,14614,140]];
-const LIST_TOP = 690;
+const LIST_TOP = 756;              // лента начинается прямо с «неделя((1))» — без зазора под шапкой
+const TOP_H = 612;                 // высота закреплённой шапки в единицах макета
+/* верх значка замка от верха фото (ед. макета), по номеру дня */
+const LT = {1:234,3:201,5:153,7:83,9:98,10:91,12:86,14:41,15:109,17:90,19:103,21:92,23:104,24:114,27:96};
+/* верх кнопки «открыть» от верха фото, по номеру дня */
+const BT = {2:319,4:273,6:281,8:324,11:263,13:248,16:282,18:287,20:285,22:282,25:278,26:289,28:298};
 /* насколько текст дня ниже верхнего края фото (в единицах макета) */
 const OFF = [3,7,8,4,7,13,7,6,2,4,-6,9,4,15,12,19,2,18,15,16,8,13,15,10,9,21,9,30];
 /* высота каждого фото = до верха следующего: фото стоят вплотную, без щелей */
@@ -311,11 +316,11 @@ canvas.innerHTML = DAYS.map((d, i) => {
     <div class="txt" style="top:${u(OFF[i] - 3)}">
       <span class="t date">((${dd(dt)}))\n${WD[dt.getDay()]}</span>
       <span class="t main"><span class="ttl">${esc(d.title)}</span><span class="desc">${esc(d.desc)}</span></span>
-      ${d.open ? `<button class="open-btn" data-open>${esc(d.btn || 'открыть')}</button>` : ''}
     </div>
+    ${d.open ? `<button class="open-btn" data-open data-top="${BT[i + 1]}">${esc(d.btn || 'открыть')}</button>` : ''}
     <button class="ph" style="width:${u(w)};height:calc(var(--k) * ${h} + 1px)" aria-label="${esc(d.title.replace(/\n/g,' '))}${d.open ? '' : ' — доступно в клубе'}">
       <span class="pl"><img src="photos/${String(i+1).padStart(2,'0')}.webp" alt="" decoding="async"></span>
-      ${d.open ? '' : `<span class="lock">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
+      ${d.open ? '' : `<span class="lock" style="top:${u(LT[i + 1] ?? 100)}">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
     </button>
   </section>`;
 }).join('') + FLAKES.map(([x, y, s], k) =>
@@ -323,21 +328,23 @@ canvas.innerHTML = DAYS.map((d, i) => {
 ).join('');
 
 /* кнопка «открыть» — сразу под описанием, на 19 единиц ниже последней строки */
+/* кнопки ставим ровно в целые пиксели экрана — тогда тонкая рамка видна одинаково сверху и снизу */
 function placeButtons(){
-  document.querySelectorAll('.txt').forEach(t => {
-    const b = t.querySelector('.open-btn'); if (!b) return;
-    const m = t.querySelector('.main');
-    const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--k'));
-    const bottom = m.offsetTop + m.offsetHeight * 1.2;   // с учётом вытягивания scaleY(1.2)
-    b.style.top = (bottom + 19 * k) + 'px';
+  const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--k'));
+  const dpr = devicePixelRatio || 1, snap = v => Math.round(v * dpr) / dpr;
+  document.querySelectorAll('.open-btn').forEach(b => {
+    b.style.top = snap(+b.dataset.top * k) + 'px';
+    b.style.height = snap(37 * k) + 'px';
   });
+  const club = document.getElementById('club');
+  club.style.height = Math.max(40, snap(82 * k)) + 'px';
 }
 
 /* масштаб от ширины экрана; шапка — не выше трети экрана */
 function fit(){
   const W = Math.min(innerWidth, 560);
   const k = W / 1080;
-  const kt = Math.min(k, (innerHeight / 3) / LIST_TOP);
+  const kt = Math.min(k, (innerHeight / 3) / TOP_H);
   const root = document.documentElement.style;
   root.setProperty('--k', k + 'px');
   root.setProperty('--kt', kt + 'px');
