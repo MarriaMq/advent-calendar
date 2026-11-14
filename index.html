@@ -39,8 +39,8 @@
     font-size:calc(var(--kt) * 24.5);line-height:1;letter-spacing:-.02em;white-space:nowrap;color:var(--white);
   }
   .head span:nth-child(1){left:calc(var(--kt) * 57)}
-  .head span:nth-child(2){left:calc(var(--kt) * 338)}
-  .head span:nth-child(3){left:calc(var(--kt) * 516)}
+  .head span:nth-child(2){left:calc(var(--kt) * 341)}
+  .head span:nth-child(3){left:calc(var(--kt) * 518)}
   .head span:nth-child(4){right:calc(var(--kt) * 50)}
   /* заголовок — вырезан из макета картинкой, чтобы буквы стояли один в один (n над l, n над d) */
   .hero{position:absolute;left:calc(var(--kt) * 36);top:calc(var(--kt) * 150);width:calc(var(--kt) * 748);margin:0;line-height:0}
@@ -64,7 +64,7 @@
   .canvas{position:relative;width:calc(var(--k) * 1080);margin:0 auto}
   .day{position:absolute;left:0;width:100%}
   .week{
-    position:absolute;left:calc(var(--k) * 47);top:calc(var(--k) * -2);
+    position:absolute;left:calc(var(--k) * 43);top:calc(var(--k) * -2);
     font-size:calc(var(--k) * 42.4);line-height:1;letter-spacing:-.02em;color:var(--white);white-space:nowrap;
   }
   .txt{
@@ -76,11 +76,13 @@
   .day.is-open .txt{color:var(--white)}
   /* узкий вытянутый гротеск: Helvetica, растянутая по вертикали */
   .txt .t{display:block;white-space:pre;transform:scaleY(1.2);transform-origin:100% 0;line-height:.76}
-  .txt .main span{display:block;white-space:pre;line-height:.915}
-  .txt .date{font-size:calc(var(--k) * 27)}
-  .txt .main{margin-top:calc(var(--k) * 35);font-size:calc(var(--k) * 25.5)}
-  .txt .ttl{text-transform:uppercase}
-  .txt .main{line-height:.915}
+  .txt .main span{display:block;white-space:pre;line-height:var(--lh,.886)}
+  .txt .ln{display:block;white-space:pre;position:relative}
+  .txt .date{font-size:calc(var(--k) * 27);line-height:.667;position:relative;top:calc(var(--k) * 2.5);right:calc(var(--k) * 3)}
+  .txt .date .ln + .ln{right:calc(var(--k) * -5)}
+  .txt .main{position:relative;margin-top:calc(var(--k) * 41);font-size:calc(var(--k) * 25.5)}
+  .txt .ttl{text-transform:uppercase;letter-spacing:0}
+  .txt .main{line-height:.886}
   .open-btn{
     position:absolute;right:calc(var(--k) * 616);
     width:calc(var(--k) * 249);height:calc(var(--k) * 39);
@@ -110,11 +112,11 @@
   /* замок на закрытых днях */
   .lock{
     position:absolute;left:0;right:0;top:0;z-index:1;
-    display:flex;flex-direction:column;align-items:center;gap:calc(var(--k) * 17);
+    display:flex;flex-direction:column;align-items:center;gap:calc(var(--k) * 13);
     color:var(--white);text-align:center;pointer-events:none;
   }
   .lock svg{width:calc(var(--k) * 61);height:calc(var(--k) * 72)}
-  .lock span{font-size:calc(var(--k) * 26);line-height:.78;letter-spacing:-.02em;white-space:pre;transform:scaleY(1.2);transform-origin:50% 0}
+  .lock span{position:relative;left:calc(var(--k) * 5);font-size:calc(var(--k) * 26);line-height:.70;letter-spacing:-.02em;white-space:pre;transform:scaleY(1.2);transform-origin:50% 0}
   .day.nudge .lock svg{animation:nudge .45s ease}
   @keyframes nudge{20%{transform:translateX(-6px) rotate(-6deg)}45%{transform:translateX(5px) rotate(5deg)}70%{transform:translateX(-3px)}}
 
@@ -310,18 +312,30 @@ const END = lastBottom + 112 + 82 + 70;                 // зазор до кн�
 canvas.style.height = u(END - LIST_TOP);
 const Y = y => u(y - LIST_TOP);
 
+/* каждая строка — отдельно; FIX[день][строка] = [сдвиг вниз, сдвиг влево] в ед. макета — подгонка по оригиналу */
+const FIX = {4:{4:[0,8]}, 19:{3:[0,8]}};
+/* поправки по дням: m — сдвиг всего блока названия+описания, dl — межстрочный в описании (как в макете) */
+/* сдвиги замка вправо (+), кнопки вправо (+), подписи «неделя» вниз (+) — по номеру дня / индексу, сверено с макетом */
+const LX = {1:8,3:9,5:-3,9:-3,12:-8,14:-5,15:7,17:-1,19:-5,21:3,23:-4,24:-3};
+const BX = {2:7,22:2,28:-2};
+const WY = {0:-5,7:-4,14:-7};
+const ADJ = {0:{dl:.706, dd:-5}, 13:{m:-8}, 14:{x:4}, 20:{m:-8}, 21:{x:3}, 22:{m:-8}, 23:{m:-8}, 25:{x:3}, 26:{x:3}, 27:{x:-3}};
+const lines = (arr, i, from) => arr.map((t, j) => {
+  const f = (FIX[i] || [])[from + j];
+  return `<span class="ln"${f ? ` style="top:${u(f[0])};right:${u(f[1])}"` : ''}>${esc(t)}</span>`;
+}).join('');
 canvas.innerHTML = DAYS.map((d, i) => {
   const [top, w, h] = BOX[i], dt = dateOf(i);
   return `<section class="day ${d.open ? 'is-open' : 'is-locked'}" data-i="${i}" style="top:${Y(top)}">
-    ${d.week ? `<div class="week" style="top:${u(OFF[i] - 5)}">неделя((${d.week}))</div>` : ''}
-    <div class="txt" style="top:${u(OFF[i] - 3)}">
-      <span class="t date">((${dd(dt)}))\n${WD[dt.getDay()]}</span>
-      <span class="t main"><span class="ttl">${esc(d.title)}</span><span class="desc">${esc(d.desc)}</span></span>
+    ${d.week ? `<div class="week" style="top:${u(OFF[i] - 5 + (WY[i] || 0))}">неделя((${d.week}))</div>` : ''}
+    <div class="txt" style="top:${u(OFF[i] - 3)}${(ADJ[i]||{}).x ? `;right:${u(621 - ADJ[i].x)}` : ''}">
+      <span class="t date">${lines([`((${dd(dt)}))`, WD[dt.getDay()]], i, 0)}</span>
+      <span class="t main"${(ADJ[i]||{}).m ? ` style="top:${u(ADJ[i].m)}"` : ''}><span class="ttl">${lines(d.title.split('\n'), i, 2)}</span><span class="desc"${(ADJ[i]||{}).dl ? ` style="--lh:${ADJ[i].dl};position:relative;top:${u(ADJ[i].dd||0)}"` : ''}>${lines(d.desc.split('\n'), i, 2 + d.title.split('\n').length)}</span></span>
     </div>
-    ${d.open ? `<button class="open-btn" data-open data-top="${BT[i + 1]}">${esc(d.btn || 'открыть')}</button>` : ''}
+    ${d.open ? `<button class="open-btn" data-open data-top="${BT[i + 1]}" style="right:${u(623 - (BX[i + 1] || 0))}">${esc(d.btn || 'открыть')}</button>` : ''}
     <button class="ph" style="width:${u(w)};height:calc(var(--k) * ${h} + 1px)" aria-label="${esc(d.title.replace(/\n/g,' '))}${d.open ? '' : ' — доступно в клубе'}">
       <span class="pl"><img src="photos/${String(i+1).padStart(2,'0')}.webp" alt="" decoding="async"></span>
-      ${d.open ? '' : `<span class="lock" style="top:${u(LT[i + 1] ?? 100)}">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
+      ${d.open ? '' : `<span class="lock" style="top:${u(LT[i + 1] ?? 100)};left:${u(LX[i + 1] || 0)};right:${u(-(LX[i + 1] || 0))}">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
     </button>
   </section>`;
 }).join('') + FLAKES.map(([x, y, s], k) =>
