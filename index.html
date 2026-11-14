@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Content Advent Calendar</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -19,7 +19,8 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   /* страница сама не прокручивается и не оттягивается — прокручивается только лента */
-  html,body{background:var(--bg);color:var(--ink);height:100%;overflow:hidden;overscroll-behavior:none}
+  html,body{background:var(--bg);color:var(--ink);height:100%;overflow:hidden;overscroll-behavior:none;
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:pan-y}   /* без увеличения пальцами и двойным касанием */
   body{
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
@@ -42,9 +43,9 @@
   .head span:nth-child(3){left:calc(var(--kt) * 516)}
   .head span:nth-child(4){right:calc(var(--kt) * 50)}
   .hero{
-    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 134);
-    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.68;color:var(--ink);
-    transform:scaleY(1.22);transform-origin:0 0;
+    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 139);
+    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.694;color:var(--ink);
+    transform:scaleY(1.2);transform-origin:0 0;
   }
   .hero span{display:block;white-space:nowrap}
   .hero .ind{padding-left:.54em}
@@ -60,6 +61,7 @@
     position:fixed;inset:0;z-index:1;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
     overscroll-behavior:none;            /* без «резинки» */
+    touch-action:pan-y;                  /* только прокрутка, без масштабирования */
     scrollbar-width:none;
   }
   .list::-webkit-scrollbar{display:none}
@@ -289,6 +291,8 @@ const OFF = [3,7,8,4,7,13,7,6,2,4,-6,9,4,15,12,19,2,18,15,16,8,13,15,10,9,21,9,3
 BOX.forEach((b, i) => { if (BOX[i+1]) b[2] = BOX[i+1][0] - b[0]; });              // где в макете кончается закреплённая шапка
 </script>
 <script>
+/* iOS: запрещаем увеличение страницы жестом двумя пальцами */
+['gesturestart','gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault(), {passive:false}));
 const TG = window.Telegram && window.Telegram.WebApp;
 const IN_TG = !!(TG && TG.platform && TG.platform !== 'unknown');
 function haptic(kind, type){
