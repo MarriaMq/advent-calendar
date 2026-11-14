@@ -33,7 +33,7 @@
     position:fixed;top:0;left:0;right:0;z-index:20;background:var(--bg);
     padding-top:env(safe-area-inset-top,0px);
   }
-  .top-in{position:relative;width:calc(var(--kt) * 1080);height:calc(var(--kt) * 694);margin:0 auto}   /* под подзаголовком — тот же воздух, что в макете (112 ед.) */
+  .top-in{position:relative;width:calc(var(--kt) * 1080);height:calc(var(--kt) * 650);margin:0 auto}   /* воздух под подзаголовком */
   .head span{
     position:absolute;top:calc(var(--kt) * 24);
     font-size:calc(var(--kt) * 24.5);line-height:1;letter-spacing:-.02em;white-space:nowrap;color:var(--white);
@@ -42,13 +42,9 @@
   .head span:nth-child(2){left:calc(var(--kt) * 338)}
   .head span:nth-child(3){left:calc(var(--kt) * 516)}
   .head span:nth-child(4){right:calc(var(--kt) * 50)}
-  .hero{
-    position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 139);
-    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.694;color:var(--ink);
-    transform:scaleY(1.2);transform-origin:0 0;
-  }
-  .hero span{display:block;white-space:nowrap}
-  .hero .ind{padding-left:.54em}
+  /* заголовок — вырезан из макета картинкой, чтобы буквы стояли один в один (n над l, n над d) */
+  .hero{position:absolute;left:calc(var(--kt) * 36);top:calc(var(--kt) * 150);width:calc(var(--kt) * 748);margin:0;line-height:0}
+  .hero img{display:block;width:100%;height:auto}
   .tagline{
     position:absolute;left:calc(var(--kt) * 476);top:calc(var(--kt) * 414);
     font-size:calc(var(--kt) * 39.5);line-height:.89;letter-spacing:-.02em;color:var(--white);
@@ -208,7 +204,7 @@
   <header class="head">
     <span>ne(w) content dump</span><span>2027</span><span>content advent calendar</span><span>by dasha.brisaniuk</span>
   </header>
-  <h1 class="hero"><span class="ind">new</span><span>((conten advent))</span><span class="ind">calendar</span></h1>
+  <h1 class="hero"><img src="images/hero.png" alt="new ((conten advent)) calendar" width="1496" height="516"></h1>
   <p class="tagline"><span>заходим в 2027</span><span>не с обещаниями, а с готовым</span><span>контентом, который нативно</span><span>продаёт</span></p>
 </div></div>
 
@@ -280,7 +276,7 @@ const BOX = [[756,432,540],[1296,594,484],[1784,432,540],[2328,582,584],[2916,42
 /* снежинки: центр x, центр y, размер — в единицах макета */
 const FLAKES = [[92,992,140],[997,1125,122],[215,1719,122],[997,2227,122],[388,2754,128],[988,2990,140],[116,3342,140],[403,3831,122],[974,4258,128],[113,4457,134],[1017,5297,122],[112,5594,128],[383,6159,134],[204,6578,140],[379,7265,134],[991,7621,122],[105,7905,122],[386,8616,140],[881,8953,134],[118,9246,128],[399,9619,122],[1011,9819,134],[117,10187,122],[388,10556,128],[861,10743,122],[112,11174,128],[395,11719,134],[994,12128,128],[230,12418,128],[1003,12787,122],[391,13091,134],[105,13481,134],[984,13820,128],[383,14351,134],[934,14614,140]];
 const LIST_TOP = 756;              // лента начинается прямо с «неделя((1))» — без зазора под шапкой
-const TOP_H = 694;                 // высота закреплённой шапки в единицах макета
+const TOP_H = 650;                 // высота закреплённой шапки в единицах макета
 /* верх значка замка от верха фото (ед. макета), по номеру дня */
 const LT = {1:234,3:201,5:153,7:83,9:98,10:91,12:86,14:41,15:109,17:90,19:103,21:92,23:104,24:114,27:96};
 /* верх кнопки «открыть» от верха фото, по номеру дня */
