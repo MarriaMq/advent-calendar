@@ -43,8 +43,8 @@
   .head span:nth-child(4){right:calc(var(--kt) * 50)}
   .hero{
     position:absolute;left:calc(var(--kt) * 45);top:calc(var(--kt) * 196);
-    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.82;color:var(--ink);
-    transform:scaleY(1.1);transform-origin:0 0;
+    font-weight:400;font-size:calc(var(--kt) * 102.7);letter-spacing:-.02em;line-height:.68;color:var(--ink);
+    transform:scaleY(1.22);transform-origin:0 0;
   }
   .hero span{display:block;white-space:nowrap}
   .hero .ind{padding-left:.54em}
@@ -85,9 +85,9 @@
   .open-btn{
     position:absolute;right:0;
     width:calc(var(--k) * 249);height:calc(var(--k) * 39);
-    border:1.5px solid var(--white);border-radius:999px;background:var(--pill);
-    color:var(--white);font-weight:700;font-size:calc(var(--k) * 26);letter-spacing:-.01em;
-    display:grid;place-items:center;
+    border:.5px solid var(--white);border-radius:999px;background:var(--pill);
+    color:var(--white);font-weight:700;font-size:calc(var(--k) * 26);letter-spacing:0;line-height:1;
+    display:flex;align-items:center;justify-content:center;padding:0 0 .16em;text-align:center;   /* строчные буквы — оптически по центру */
     -webkit-tap-highlight-color:transparent;outline:none;
   }
   .open-btn:active{filter:brightness(.96)}
@@ -141,7 +141,7 @@
   }
   .club a{
     display:flex;align-items:center;justify-content:center;width:100%;height:100%;
-    border:2px solid var(--white);border-radius:999px;background:var(--pill);
+    border:1px solid var(--white);border-radius:999px;background:var(--pill);
     color:var(--ink);text-decoration:none;font-size:calc(var(--k) * 40.2);letter-spacing:-.02em;
   }
   .club a span{display:inline-block;transform:scaleY(1.1)}
@@ -276,7 +276,11 @@ const DAYS = [
 const BOX = [[756,432,540],[1296,594,484],[1784,432,540],[2328,582,584],[2916,426,512],[3428,504,744],[4176,420,364],[4540,603,412],[4952,366,408],[5364,300,372],[5748,600,784],[6536,492,336],[6876,600,644],[7524,366,244],[7768,354,416],[8192,600,672],[8864,318,320],[9184,492,520],[9708,324,404],[10116,432,536],[10652,306,384],[11036,603,752],[11792,450,396],[12192,336,380],[12576,456,612],[13192,600,348],[13536,420,384],[13924,600,528]];
 /* снежинки: центр x, центр y, размер — в единицах макета */
 const FLAKES = [[92,992,140],[997,1125,122],[215,1719,122],[997,2227,122],[388,2754,128],[988,2990,140],[116,3342,140],[403,3831,122],[974,4258,128],[113,4457,134],[1017,5297,122],[112,5594,128],[383,6159,134],[204,6578,140],[379,7265,134],[991,7621,122],[105,7905,122],[386,8616,140],[881,8953,134],[118,9246,128],[399,9619,122],[1011,9819,134],[117,10187,122],[388,10556,128],[861,10743,122],[112,11174,128],[395,11719,134],[994,12128,128],[230,12418,128],[1003,12787,122],[391,13091,134],[105,13481,134],[984,13820,128],[383,14351,134],[934,14614,140]];
-const LIST_TOP = 690;              // где в макете кончается закреплённая шапка
+const LIST_TOP = 690;
+/* насколько текст дня ниже верхнего края фото (в единицах макета) */
+const OFF = [3,7,8,4,7,13,7,6,2,4,-6,9,4,15,12,19,2,18,15,16,8,13,15,10,9,21,9,30];
+/* высота каждого фото = до верха следующего: фото стоят вплотную, без щелей */
+BOX.forEach((b, i) => { if (BOX[i+1]) b[2] = BOX[i+1][0] - b[0]; });              // где в макете кончается закреплённая шапка
 </script>
 <script>
 const TG = window.Telegram && window.Telegram.WebApp;
@@ -303,13 +307,13 @@ const Y = y => u(y - LIST_TOP);
 canvas.innerHTML = DAYS.map((d, i) => {
   const [top, w, h] = BOX[i], dt = dateOf(i);
   return `<section class="day ${d.open ? 'is-open' : 'is-locked'}" data-i="${i}" style="top:${Y(top)}">
-    ${d.week ? `<div class="week">неделя((${d.week}))</div>` : ''}
-    <div class="txt">
+    ${d.week ? `<div class="week" style="top:${u(OFF[i] - 5)}">неделя((${d.week}))</div>` : ''}
+    <div class="txt" style="top:${u(OFF[i] - 3)}">
       <span class="t date">((${dd(dt)}))\n${WD[dt.getDay()]}</span>
       <span class="t main"><span class="ttl">${esc(d.title)}</span><span class="desc">${esc(d.desc)}</span></span>
       ${d.open ? `<button class="open-btn" data-open>${esc(d.btn || 'открыть')}</button>` : ''}
     </div>
-    <button class="ph" style="width:${u(w)};height:${u(h)}" aria-label="${esc(d.title.replace(/\n/g,' '))}${d.open ? '' : ' — доступно в клубе'}">
+    <button class="ph" style="width:${u(w)};height:calc(var(--k) * ${h} + 1px)" aria-label="${esc(d.title.replace(/\n/g,' '))}${d.open ? '' : ' — доступно в клубе'}">
       <span class="pl"><img src="photos/${String(i+1).padStart(2,'0')}.webp" alt="" decoding="async"></span>
       ${d.open ? '' : `<span class="lock">${LOCK_SVG}<span>((материал доступен\nтолько в клубе))</span></span>`}
     </button>
