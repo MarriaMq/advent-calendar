@@ -100,7 +100,7 @@
   }
   .ph:focus-visible{outline:1px dashed var(--ink);outline-offset:3px}
   /* параллакс: картинка чуть выше рамки и плавно ездит внутри неё при прокрутке */
-  .ph .pl{position:absolute;left:0;right:0;top:-7%;height:114%;will-change:transform}
+  .ph .pl{position:absolute;inset:0}   /* фото целиком, как в макете — без обрезки по бокам */
   .ph img{
     display:block;width:100%;height:100%;object-fit:cover;
     transform:scale(1.12);filter:blur(5px);
@@ -395,7 +395,7 @@ const pls = [...document.querySelectorAll('.ph .pl')];
 let ticking = false;
 function parallax(){
   ticking = false;
-  if (reduce) return;
+  if (true) return;   // параллакс внутри рамки обрезал фото по бокам — выключен, фото как в макете
   const vh = innerHeight;
   for (const p of pls) {
     const r = p.parentElement.getBoundingClientRect();
