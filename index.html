@@ -424,8 +424,7 @@ check(true);
    день считается невышедшим, пока не наступила его дата.
    ?all в ссылке — открыть всё (для проверки) */
 const SHOW_ALL = /[?&]all\b/.test(location.search);
-/* на части дней — плашка, на части — шторка (можно задать у дня полем soon) */
-DAYS.filter(d => d.open).forEach((d, n) => { if (!d.soon) d.soon = n % 2 ? 'sheet' : 'toast'; });
+/* у всех дней — шторка с замочком; поле soon:"toast" у дня включит плашку вместо неё */
 const today = () => { const t = new Date(); t.setHours(0,0,0,0); return t; };
 const isSoon = i => !SHOW_ALL && dateOf(i) > today();
 const longDate = dt => dt.toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
@@ -498,7 +497,7 @@ function openDay(i){
   if (soon) {
     const n = daysLeft(i);
     sBody.innerHTML = `<div class="soon">${LOCK_SVG}<span><b>${esc(d.tag || 'задание')} откроется ${longDate(dt)}</b>
-      <small>((${dd(dt)})) ${WD[dt.getDay()]} · ${n === 1 ? 'уже завтра' : `через ${n} ${plural(n,'день','дня','дней')}`}</small></span></div>
+      <small>((${dd(dt)})) ${WD[dt.getDay()]}, ${n === 1 ? 'уже завтра' : `через ${n} ${plural(n,'день','дня','дней')}`}</small></span></div>
       <p>${esc(d.desc.replace(/\n/g,' '))}</p>`;
   } else
   sBody.innerHTML = (d.blocks || [{ text: d.desc.replace(/\n/g,' ') }, { video:'' }]).map(blockHTML).join('');
