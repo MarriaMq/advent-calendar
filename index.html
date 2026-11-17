@@ -186,6 +186,12 @@
   .video{position:relative;aspect-ratio:16/9;background:rgba(27,27,27,.08);margin:6px 0 16px;overflow:hidden}
   .video iframe,.video video{position:absolute;inset:0;width:100%;height:100%;border:0}
   .video .vph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:12px}
+  /* «ещё не вышло» в шторке */
+  .soon{display:flex;align-items:center;gap:14px;padding:16px;margin:0 0 14px;border-radius:14px;background:var(--surface)}
+  .soon svg{flex:none;width:26px;height:31px;color:var(--ink)}
+  .soon b{display:block;font-weight:500;font-size:17px;line-height:1.25}
+  .soon small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+  .sheet.is-soon .cover{filter:grayscale(.15) brightness(.97)}
   .close{
     position:sticky;top:0;float:right;margin-top:-4px;background:var(--ink);color:var(--paper);
     width:32px;height:32px;border-radius:50%;font-size:16px;line-height:32px;
@@ -234,6 +240,7 @@
    desc  – описание под названием
    open  – true: день открыт (белый текст + кнопка), false: «в клубе» (серый текст + замок)
    btn   – текст кнопки у открытого дня (по умолчанию «открыть»)
+   soon  – как показывать день, пока его дата не наступила: "toast" — плашка внизу, иначе — шторка «откроется …»
    week  – подпись «неделя((N))» слева
    tag, blocks – содержимое шторки урока (как раньше):
      { text:"…" } { video:"https://…/embed/…" | "x.mp4" | "" } { steps:["…"] }
@@ -413,12 +420,35 @@ document.fonts && document.fonts.ready.then(placeButtons);
 fit();
 check(true);
 
+/* ---------- ещё не вышло ----------
+   день считается невышедшим, пока не наступила его дата.
+   ?all в ссылке — открыть всё (для проверки) */
+const SHOW_ALL = /[?&]all\b/.test(location.search);
+/* на части дней — плашка, на части — шторка (можно задать у дня полем soon) */
+DAYS.filter(d => d.open).forEach((d, n) => { if (!d.soon) d.soon = n % 2 ? 'sheet' : 'toast'; });
+const today = () => { const t = new Date(); t.setHours(0,0,0,0); return t; };
+const isSoon = i => !SHOW_ALL && dateOf(i) > today();
+const longDate = dt => dt.toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+const plural = (n, a, b, c) => n % 10 == 1 && n % 100 != 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
+const daysLeft = i => Math.round((dateOf(i) - today()) / 864e5);
+
 /* ---------- нажатия ---------- */
 let toastT;
+function showToast(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function soonTap(day, i){
+  haptic('notify','warning');
+  day.classList.remove('nudge'); void day.offsetWidth; day.classList.add('nudge');
+  showToast(`материал выйдет ${longDate(dateOf(i))}`);
+}
 function lockedTap(day){
   haptic('notify','warning');
   day.classList.remove('nudge'); void day.offsetWidth; day.classList.add('nudge');
   const t = document.getElementById('toast');
+  t.textContent = 'материал доступен только в клубе';
   t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
   const club = document.getElementById('club');
   club.classList.remove('pulse'); void club.offsetWidth; club.classList.add('pulse');
@@ -427,6 +457,7 @@ canvas.addEventListener('click', e => {
   const hit = e.target.closest('.ph, [data-open]'); if (!hit) return;
   const day = hit.closest('.day'), i = +day.dataset.i;
   if (day.classList.contains('is-locked')) return lockedTap(day);
+  if (isSoon(i) && DAYS[i].soon === 'toast') return soonTap(day, i);
   const ph = day.querySelector('.ph');
   ph.classList.add('tap'); requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.remove('tap')));
   haptic('impact','medium');
@@ -458,10 +489,18 @@ function openDay(i){
   const d = DAYS[i], dt = dateOf(i);
   lastEl = document.activeElement;
   sNum.textContent = `((${dd(dt)})) ${WD[dt.getDay()]}`;
-  sDate.textContent = dt.toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+  sDate.textContent = longDate(dt);
   sTag.textContent = d.tag || ''; sTag.hidden = !d.tag;
   sTitle.textContent = d.title.replace(/\n/g,' ');
   sImg.src = `photos/${String(i+1).padStart(2,'0')}.webp`; sImg.alt = '';
+  const soon = isSoon(i);
+  sheet.classList.toggle('is-soon', soon);
+  if (soon) {
+    const n = daysLeft(i);
+    sBody.innerHTML = `<div class="soon">${LOCK_SVG}<span><b>${esc(d.tag || 'задание')} откроется ${longDate(dt)}</b>
+      <small>((${dd(dt)})) ${WD[dt.getDay()]} · ${n === 1 ? 'уже завтра' : `через ${n} ${plural(n,'день','дня','дней')}`}</small></span></div>
+      <p>${esc(d.desc.replace(/\n/g,' '))}</p>`;
+  } else
   sBody.innerHTML = (d.blocks || [{ text: d.desc.replace(/\n/g,' ') }, { video:'' }]).map(blockHTML).join('');
   sheet.scrollTop = 0;
   document.body.classList.add('open');
