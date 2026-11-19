@@ -300,6 +300,27 @@ BOX.forEach((b, i) => { if (BOX[i+1]) b[2] = BOX[i+1][0] - b[0]; });            
 ['gesturestart','gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault(), {passive:false}));
 const TG = window.Telegram && window.Telegram.WebApp;
 const IN_TG = !!(TG && TG.platform && TG.platform !== 'unknown');
+
+/* ---------- аналитика: каждое действие — строка в Google Таблице ---------- */
+const STATS_URL = "https://script.google.com/macros/s/AKfycbzNldmjdS5F-oIfS8IR20A2M3Cl3ssqi7E7g0dXafEZu5NhJDkLYNjAotMqlMMO982y-A/exec";   // адрес веб-приложения Apps Script (…/exec); пусто — ничего не отправляется
+const WHO = (() => {    // анонимный номер человека: из Telegram id (не обратим), вне Telegram — случайный
+  try {
+    const u = IN_TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
+    if (u && u.id) { let h = 2166136261; for (const c of 'adv' + u.id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return 'tg' + (h >>> 0).toString(36); }
+    let id = localStorage.getItem('advWho');
+    if (!id) { id = 'web' + Math.random().toString(36).slice(2, 9); localStorage.setItem('advWho', id); }
+    return id;
+  } catch(_) { return 'web-anon'; }
+})();
+const FROM = (() => { try { return (IN_TG && TG.initDataUnsafe.start_param) || new URLSearchParams(location.search).get('from') || ''; } catch(_) { return ''; } })();
+function track(event, day, item){
+  if (!STATS_URL || /[?&]all\b/.test(location.search)) return;
+  const body = JSON.stringify({ who: WHO, event, day: day || '', item: item || '', from: FROM,
+                                platform: IN_TG ? TG.platform : 'browser' });
+  try { if (navigator.sendBeacon && navigator.sendBeacon(STATS_URL, body)) return; } catch(_) {}
+  try { fetch(STATS_URL, { method: 'POST', mode: 'no-cors', keepalive: true, body }); } catch(_) {}
+}
+const dayLabel = i => `${dd(dateOf(i))} ${DAYS[i].title.replace(/\s+/g, ' ')}`;
 function haptic(kind, type){
   try { const h = IN_TG && TG.HapticFeedback; if (!h) return;
     kind === 'notify' ? h.notificationOccurred(type) : h.impactOccurred(type); } catch(_){}
@@ -455,7 +476,8 @@ function lockedTap(day){
 canvas.addEventListener('click', e => {
   const hit = e.target.closest('.ph, [data-open]'); if (!hit) return;
   const day = hit.closest('.day'), i = +day.dataset.i;
-  if (day.classList.contains('is-locked')) return lockedTap(day);
+  if (day.classList.contains('is-locked')) { track('нажал закрытый (клуб)', dayLabel(i)); return lockedTap(day); }
+  track(isSoon(i) ? 'нажал ещё не вышедший' : 'открыл материал', dayLabel(i));
   if (isSoon(i) && DAYS[i].soon === 'toast') return soonTap(day, i);
   const ph = day.querySelector('.ph');
   ph.classList.add('tap'); requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.remove('tap')));
@@ -484,8 +506,10 @@ function blockHTML(b){
 let lastEl = null, usingKeyboard = false;
 addEventListener('keydown', e => { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ') usingKeyboard = true; if (e.key === 'Escape') closeDay(); });
 addEventListener('pointerdown', () => usingKeyboard = false, true);
+let curDay = -1;
 function openDay(i){
   const d = DAYS[i], dt = dateOf(i);
+  curDay = i;
   lastEl = document.activeElement;
   sNum.textContent = `((${dd(dt)})) ${WD[dt.getDay()]}`;
   sDate.textContent = longDate(dt);
@@ -539,12 +563,20 @@ sheet.addEventListener('touchend', e => {
     TG.setBottomBarColor && TG.setBottomBarColor('#b0c0d0');
   } catch(e) {}
 })();
+/* аналитика: открытие календаря и клики по ссылкам/файлам в шторке */
+track('открыл календарь');
+sBody.addEventListener('click', e => {
+  const a = e.target.closest('a.row'); if (!a) return;
+  const i = curDay;
+  track(a.hasAttribute('download') ? 'скачал файл' : 'перешёл по ссылке', i >= 0 ? dayLabel(i) : '', (a.querySelector('b') || a).textContent.trim());
+});
 /* кнопка клуба — ССЫЛКА НА БОТА: */
 const CLUB_URL = "https://t.me/newcontentdump_bot?start=";
 (function(){
   const btn = document.getElementById('clubBtn');
   btn.href = CLUB_URL;
   btn.addEventListener('click', e => {
+    track('зайти в клуб');
     if (IN_TG && TG.openTelegramLink && /^https:\/\/t\.me\//.test(CLUB_URL)) {
       e.preventDefault();
       haptic('impact','medium');
