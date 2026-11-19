@@ -303,10 +303,10 @@ const IN_TG = !!(TG && TG.platform && TG.platform !== 'unknown');
 
 /* ---------- аналитика: каждое действие — строка в Google Таблице ---------- */
 const STATS_URL = "https://script.google.com/macros/s/AKfycbzNldmjdS5F-oIfS8IR20A2M3Cl3ssqi7E7g0dXafEZu5NhJDkLYNjAotMqlMMO982y-A/exec";   // адрес веб-приложения Apps Script (…/exec); пусто — ничего не отправляется
-const WHO = (() => {    // анонимный номер человека: из Telegram id (не обратим), вне Telegram — случайный
+const TGU = (() => { try { return (IN_TG && TG.initDataUnsafe && TG.initDataUnsafe.user) || null; } catch(_) { return null; } })();
+const WHO = (() => {    // человек: в Telegram — его Telegram ID, вне Telegram — случайный номер браузера
+  if (TGU && TGU.id) return String(TGU.id);
   try {
-    const u = IN_TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
-    if (u && u.id) { let h = 2166136261; for (const c of 'adv' + u.id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return 'tg' + (h >>> 0).toString(36); }
     let id = localStorage.getItem('advWho');
     if (!id) { id = 'web' + Math.random().toString(36).slice(2, 9); localStorage.setItem('advWho', id); }
     return id;
@@ -316,7 +316,9 @@ const FROM = (() => { try { return (IN_TG && TG.initDataUnsafe.start_param) || n
 function track(event, day, item){
   if (!STATS_URL || /[?&]all\b/.test(location.search)) return;
   const body = JSON.stringify({ who: WHO, event, day: day || '', item: item || '', from: FROM,
-                                platform: IN_TG ? TG.platform : 'browser' });
+                                platform: IN_TG ? TG.platform : 'browser',
+                                username: TGU && TGU.username ? '@' + TGU.username : '',
+                                name: TGU ? [TGU.first_name, TGU.last_name].filter(Boolean).join(' ') : '' });
   try { if (navigator.sendBeacon && navigator.sendBeacon(STATS_URL, body)) return; } catch(_) {}
   try { fetch(STATS_URL, { method: 'POST', mode: 'no-cors', keepalive: true, body }); } catch(_) {}
 }
