@@ -51,6 +51,12 @@
     transform:scaleY(1.17);transform-origin:0 0;   /* вытянутые буквы, как в макете */
   }
   .tagline span{display:block;white-space:nowrap}
+  /* «старт 01.12» — как на лендинге: белым, слева под заголовком, на уровне первой строки подзаголовка */
+  .start{
+    position:absolute;left:calc(var(--kt) * 108);top:calc(var(--kt) * 414);margin:0;
+    font-size:calc(var(--kt) * 39.5);line-height:.89;letter-spacing:-.02em;color:var(--white);white-space:nowrap;
+    transform:scaleY(1.17);transform-origin:0 0;
+  }
 
   /* ---------- лента ---------- */
   .list{
@@ -230,6 +236,7 @@
     <span>ne(w) content dump</span><span>2027</span><span>content advent calendar</span><span>by dasha.brisaniuk</span>
   </header>
   <h1 class="hero"><img src="images/hero.png" alt="new ((conten advent)) calendar" width="1496" height="516"></h1>
+  <p class="start">старт 01.12</p>
   <p class="tagline"><span>заходим в 2027</span><span>не с обещаниями, а с готовым</span><span>контентом, который нативно</span><span>продаёт</span></p>
 </div></div>
 
