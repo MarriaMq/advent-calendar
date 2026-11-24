@@ -161,6 +161,13 @@
     border-radius:999px;background:var(--pill);color:var(--ink);text-decoration:none;font-size:18px;letter-spacing:-.02em}
   .gate-btn span{display:inline-block;transform:scaleY(1.1)}
 
+  /* ---------- переключатель для админов ---------- */
+  .admin-btn{position:fixed;z-index:36;left:50%;transform:translateX(-50%);bottom:calc(var(--k) * 172 + env(safe-area-inset-bottom,0px));white-space:nowrap;
+    padding:7px 12px;border-radius:999px;background:rgba(27,27,27,.55);color:var(--white);font-size:11px;letter-spacing:.01em}
+  .admin-btn.on{background:var(--ink)}
+  .admin-btn[hidden]{display:none}
+  .open .admin-btn{opacity:0;pointer-events:none}
+
   /* ---------- шторка урока ---------- */
   .scrim{position:fixed;inset:0;z-index:40;background:rgba(27,27,27,.4);opacity:0;pointer-events:none;transition:opacity .35s ease}
   .sheet{
@@ -233,6 +240,8 @@
 <nav class="club" id="club"><a id="clubBtn" href="https://t.me/newcontentdump_bot?start=" target="_blank" rel="noopener"><span>зайти в клуб</span></a></nav>
 
 <div class="gate" id="gate" hidden><div class="gate-in"><p id="gateText"></p><a class="gate-btn" id="gateBtn" href="#" rel="noopener"><span id="gateBtnText"></span></a></div></div>
+
+<button class="admin-btn" id="adminBtn" type="button" hidden></button>
 
 <div class="scrim" id="scrim"></div>
 <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
@@ -499,6 +508,14 @@ function setGate(state){
     if (IN_TG && TG.openTelegramLink) { e.preventDefault(); TG.openTelegramLink(T[2]); setTimeout(() => { try { TG.close(); } catch(_){} }, 300); }
   };
 }
+/* админ видит календарь как участник; переключатель «все дни» — только у админов */
+function setupAdmin(){
+  const b = document.getElementById('adminBtn');
+  const paint = () => { b.textContent = SHOW_ALL ? 'админ: открыты все дни' : 'админ: как у участников'; b.classList.toggle('on', SHOW_ALL); };
+  try { SHOW_ALL = sessionStorage.getItem('advAll') === '1'; } catch(_) {}
+  paint(); b.hidden = false;
+  b.onclick = () => { SHOW_ALL = !SHOW_ALL; try { sessionStorage.setItem('advAll', SHOW_ALL ? '1' : '0'); } catch(_) {} paint(); haptic('impact','light'); };
+}
 function loadAccess(){
   if (!STATS_URL || !INIT) return setGate('tg');
   setGate('loading');
@@ -507,7 +524,8 @@ function loadAccess(){
     .then(r => {
       if (!r || !r.ok) return setGate(r && r.error === 'auth' ? 'auth' : 'error');
       if (!r.paid) return setGate('pay');
-      SERVER_DAYS = r.days || {}; SHOW_ALL = !!r.admin;
+      SERVER_DAYS = r.days || {};
+      if (r.admin) setupAdmin();
       setGate('ok');
     })
     .catch(() => setGate('error'));
