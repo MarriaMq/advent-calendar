@@ -479,13 +479,14 @@ function lockedTap(day){
   club.classList.remove('pulse'); void club.offsetWidth; club.classList.add('pulse');
 }
 /* ---------- доступ: материалы приходят с сервера только оплатившим ---------- */
-const PAY_URL = "https://t.me/newcontentdump_bot";   // куда вести тех, кто ещё не оплатил
+const PAY_URL = "https://t.me/content_advent_bot";   // куда вести тех, кто ещё не оплатил
 let ACCESS = 'loading';                               // loading | ok | pay | tg | error
 let SERVER_DAYS = {};
 function setGate(state){
   ACCESS = state;
   const T = { pay:   ['календарь откроется\nпосле оплаты', 'оплатить в боте', PAY_URL],
               tg:    ['открой календарь\nчерез бота', 'перейти в бота', PAY_URL],
+              auth:  ['не получилось\nподтвердить вход', 'открыть из бота заново', PAY_URL],
               error: ['не получилось\nзагрузить календарь', 'попробовать ещё раз', ''] }[state];
   const g = document.getElementById('gate');
   g.hidden = !T; if (!T) return;
@@ -504,7 +505,7 @@ function loadAccess(){
   fetch(STATS_URL, { method: 'POST', body: JSON.stringify({ action: 'content', initData: INIT }) })
     .then(r => r.json())
     .then(r => {
-      if (!r || !r.ok) return setGate(r && r.error === 'auth' ? 'tg' : 'error');
+      if (!r || !r.ok) return setGate(r && r.error === 'auth' ? 'auth' : 'error');
       if (!r.paid) return setGate('pay');
       SERVER_DAYS = r.days || {}; SHOW_ALL = !!r.admin;
       setGate('ok');
