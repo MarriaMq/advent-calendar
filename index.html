@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Content Advent Calendar</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -642,16 +641,11 @@ const CLUB_URL = "https://t.me/newcontentdump_bot?start=6b05af60d2cc87654603236a
 (function(){
   const btn = document.getElementById('clubBtn');
   btn.href = CLUB_URL;
-  const label = btn.querySelector('span'), LABEL = label.textContent;
-  let busy = false;                           // одно нажатие = один переход (иначе бот получает /start несколько раз)
   btn.addEventListener('click', e => {
-    if (!IN_TG) { track('зайти в клуб'); return; }   // в обычном браузере — просто ссылка
-    e.preventDefault();
-    if (busy) return;
-    busy = true;
     track('зайти в клуб');
+    if (!IN_TG) return;                       // в обычном браузере — просто ссылка
+    e.preventDefault();
     haptic('impact','medium');
-    label.textContent = 'открываю клуб…';
     /* 1) штатный способ Telegram */
     try { TG.openTelegramLink && TG.openTelegramLink(CLUB_URL); } catch(_) {}
     /* 2) запасной: если календарь всё ещё на экране — переходим по ссылке напрямую,
@@ -661,8 +655,6 @@ const CLUB_URL = "https://t.me/newcontentdump_bot?start=6b05af60d2cc87654603236a
     }, 250);
     /* 3) сворачиваем календарь, чтобы чат клуба был виден */
     setTimeout(() => { try { TG.close(); } catch(_) {} }, 900);
-    /* если календарь почему-то остался открыт — через 5 секунд кнопку снова можно нажать */
-    setTimeout(() => { busy = false; label.textContent = LABEL; }, 5000);
   });
 })();
 </script>
