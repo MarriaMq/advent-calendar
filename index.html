@@ -643,12 +643,18 @@ const CLUB_URL = "https://t.me/newcontentdump_bot?start=6b05af60d2cc87654603236a
   btn.href = CLUB_URL;
   btn.addEventListener('click', e => {
     track('зайти в клуб');
-    if (IN_TG && TG.openTelegramLink && /^https:\/\/t\.me\//.test(CLUB_URL)) {
-      e.preventDefault();
-      haptic('impact','medium');
-      TG.openTelegramLink(CLUB_URL);
-      setTimeout(() => { try { TG.close(); } catch(_){} }, 300);
-    }
+    if (!IN_TG) return;                       // в обычном браузере — просто ссылка
+    e.preventDefault();
+    haptic('impact','medium');
+    /* 1) штатный способ Telegram */
+    try { TG.openTelegramLink && TG.openTelegramLink(CLUB_URL); } catch(_) {}
+    /* 2) запасной: если через мгновение календарь всё ещё на экране — переходим по ссылке напрямую,
+          Telegram сам перехватывает t.me и открывает чат */
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') { try { location.href = CLUB_URL; } catch(_) {} }
+    }, 700);
+    /* 3) сворачиваем календарь, чтобы чат клуба был виден */
+    setTimeout(() => { try { TG.close(); } catch(_) {} }, 1600);
   });
 })();
 </script>
